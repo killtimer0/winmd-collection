@@ -1,0 +1,23 @@
+{
+  "package": "Microsoft.Graphics.Win2D",
+  "version": "1.4.0",
+  "url": "https://api.nuget.org/v3-flatcontainer/microsoft.graphics.win2d/1.4.0/microsoft.graphics.win2d.1.4.0.nupkg",
+  "archive_sha256": "e13866088b3c50205aae36e9e4cb3c23b21d11c4b4590ddcbeaafa9ea2c79f48",
+  "output": "win2d",
+  "members": [
+    {
+      "member": "lib/uap10.0/Microsoft.Graphics.Canvas.winmd",
+      "file": "Microsoft.Graphics.Canvas.winmd",
+      "sha256": "66305eea6238f467e0a311a229d267e0d139d0d6384534203a2d4ee43dad6e6f"
+    },
+    {
+      "member": "Microsoft.Graphics.Win2D.nuspec",
+      "file": "licenses/win2d/Microsoft.Graphics.Win2D.nuspec",
+      "sha256": "cfe013f8ecd73f4e426b8f5f020d8ce2107f450a31e5faff3a0a08768ded07ca"
+    }
+  ],
+  "duplicate_member": {
+    "member": "lib/net45/Microsoft.Graphics.Canvas.winmd",
+    "sha256": "66305eea6238f467e0a311a229d267e0d139d0d6384534203a2d4ee43dad6e6f"
+  }
+}

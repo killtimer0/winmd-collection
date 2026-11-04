@@ -1,0 +1,494 @@
+{
+  "package": "Microsoft.Windows.SDK.Contracts",
+  "version": "10.0.28000.2957",
+  "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windows.sdk.contracts/10.0.28000.2957/microsoft.windows.sdk.contracts.10.0.28000.2957.nupkg",
+  "archive_sha256": "9fa4ef0e9046d17ded567cc69431924ffe0dc39eed86caea543be3bc23abb971",
+  "output": "winrt",
+  "members": [
+    {
+      "member": "ref/netstandard2.0/Windows.AI.Actions.ActionsContract.winmd",
+      "file": "Windows.AI.Actions.ActionsContract.winmd",
+      "sha256": "c5052fe765634662b0f3d5d4e99c5f9756f280f724afa24e796ab7d3f5da53ce"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.MediaControlContract.winmd",
+      "file": "Windows.Media.MediaControlContract.winmd",
+      "sha256": "7eee5d3fd7da70dabe33deaeda4affb1be0144c19f3d520dc3279b573bf6d7f0"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.AI.Agents.AgentsContract.winmd",
+      "file": "Windows.AI.Agents.AgentsContract.winmd",
+      "sha256": "97df6a1dff373f9081a42e4bde73403b0db40b929aec2b904408dd2c500f894a"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Playlists.PlaylistsContract.winmd",
+      "file": "Windows.Media.Playlists.PlaylistsContract.winmd",
+      "sha256": "f0bdd0eb028b23f102ceb6780dc7f9a9141b2c273bdcdbef49358ce98ba08a24"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.AI.MachineLearning.MachineLearningContract.winmd",
+      "file": "Windows.AI.MachineLearning.MachineLearningContract.winmd",
+      "sha256": "d2410c0997e500faec5dbbfb2fea9139c57bb2b25d9fb8c59def1f7e3bd81c35"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Protection.ProtectionRenewalContract.winmd",
+      "file": "Windows.Media.Protection.ProtectionRenewalContract.winmd",
+      "sha256": "d6f9be0e2368e8e04a9912a1095e1a1673ea849a2c8af3ef0cbc51497bffa743"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.AI.MachineLearning.Preview.MachineLearningPreviewContract.winmd",
+      "file": "Windows.AI.MachineLearning.Preview.MachineLearningPreviewContract.winmd",
+      "sha256": "3f6603a3a010b5aed8c2fc9f660496600740b3124e7de5fc7a8407251af57995"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Networking.Connectivity.WwanContract.winmd",
+      "file": "Windows.Networking.Connectivity.WwanContract.winmd",
+      "sha256": "c4456ed4276727b6de65074b162cdf9f7c1d2852ac8599ab00645c0bba407289"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Activation.ActivatedEventsContract.winmd",
+      "file": "Windows.ApplicationModel.Activation.ActivatedEventsContract.winmd",
+      "sha256": "e316c1422a716bdff2175be6566e47b3bab6fb69b1a680c0ce9250aab0cca46a"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Networking.NetworkOperators.LegacyNetworkOperatorsContract.winmd",
+      "file": "Windows.Networking.NetworkOperators.LegacyNetworkOperatorsContract.winmd",
+      "sha256": "4d121d48788068cb6048017a9d94b2f49ccda2608e4299d519290f1a94447bcc"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Activation.ActivationCameraSettingsContract.winmd",
+      "file": "Windows.ApplicationModel.Activation.ActivationCameraSettingsContract.winmd",
+      "sha256": "a323fdd6b5dc6a72a74798fad14b3ac24766a4f94344145aea75fd5465a7faa8"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Networking.Sockets.ControlChannelTriggerContract.winmd",
+      "file": "Windows.Networking.Sockets.ControlChannelTriggerContract.winmd",
+      "sha256": "366bbe9527b94bf0da2fec00c7be5a76487b098fd4d80cf574847745cd9de007"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Activation.ContactActivatedEventsContract.winmd",
+      "file": "Windows.ApplicationModel.Activation.ContactActivatedEventsContract.winmd",
+      "sha256": "6d5fd26c1f3f702b757fc158584af4312cb7a336a15e5ef950de2f9b67699a0d"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Networking.XboxLive.XboxLiveSecureSocketsContract.winmd",
+      "file": "Windows.Networking.XboxLive.XboxLiveSecureSocketsContract.winmd",
+      "sha256": "f9d4fcd043ac30f8ffa4d7f24c7629507308e5cdd6c5028ad42422d43758d93d"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Activation.WebUISearchActivatedEventsContract.winmd",
+      "file": "Windows.ApplicationModel.Activation.WebUISearchActivatedEventsContract.winmd",
+      "sha256": "89b3744af30c2c2ab740bb9e238c8ffcaf20ce5fdcda16412ba20562354ed138"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Perception.Automation.Core.PerceptionAutomationCoreContract.winmd",
+      "file": "Windows.Perception.Automation.Core.PerceptionAutomationCoreContract.winmd",
+      "sha256": "20696cc7210bce3dc42157f9dfccefecf746f5a42ccb2406c91a9ae44781f955"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Background.BackgroundAlarmApplicationContract.winmd",
+      "file": "Windows.ApplicationModel.Background.BackgroundAlarmApplicationContract.winmd",
+      "sha256": "6692e7fab4e2c8ae0e9eb9cd1edc271bbc9e7907f94184331c906dd24d5fe104"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Security.EnterpriseData.EnterpriseDataContract.winmd",
+      "file": "Windows.Security.EnterpriseData.EnterpriseDataContract.winmd",
+      "sha256": "9770e153c1e2dd6c77536188e2711c70cbc572b66d9ca95bb926247dfa3e1546"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Calls.Background.CallsBackgroundContract.winmd",
+      "file": "Windows.ApplicationModel.Calls.Background.CallsBackgroundContract.winmd",
+      "sha256": "e853bd4d45c711d98260b859b65e974bb33f519ccd4e5fd60c5520d4c0457805"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Security.ExchangeActiveSyncProvisioning.EasContract.winmd",
+      "file": "Windows.Security.ExchangeActiveSyncProvisioning.EasContract.winmd",
+      "sha256": "8ece8160477962d06c9c1feeecc3c41a81fd47598cb163f7794e1a6373e1c137"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Calls.CallsPhoneContract.winmd",
+      "file": "Windows.ApplicationModel.Calls.CallsPhoneContract.winmd",
+      "sha256": "fc7a83a6b4bfb4c161d66caf7fb080db48c579a48b360e7a490341b4b338fa65"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Security.Isolation.Isolatedwindowsenvironmentcontract.winmd",
+      "file": "Windows.Security.Isolation.Isolatedwindowsenvironmentcontract.winmd",
+      "sha256": "1598bc271231dd4ffccb07f7534ef0caed285c2ec310fad4a51a9e92ed1b1ebc"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Calls.CallsVoipContract.winmd",
+      "file": "Windows.ApplicationModel.Calls.CallsVoipContract.winmd",
+      "sha256": "58f3c3009376cad0fc72058f5c43fc848b77e2a04f70d7b39b35805b1a0e67c8"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Services.Maps.GuidanceContract.winmd",
+      "file": "Windows.Services.Maps.GuidanceContract.winmd",
+      "sha256": "8299e23cc704d04584995e22d98f8735dd3d70e52a81d4d74a071083e8e598b9"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Calls.LockScreenCallContract.winmd",
+      "file": "Windows.ApplicationModel.Calls.LockScreenCallContract.winmd",
+      "sha256": "de8616e8d4f93a56e664609be80a28f5ab14c7f10ce48632a3dc8a180fc3c125"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Services.Maps.LocalSearchContract.winmd",
+      "file": "Windows.Services.Maps.LocalSearchContract.winmd",
+      "sha256": "de77ee962ee27761d9e4924a3d9052d020d1de1ec6564f7db2158c63496e57f9"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.CommunicationBlocking.CommunicationBlockingContract.winmd",
+      "file": "Windows.ApplicationModel.CommunicationBlocking.CommunicationBlockingContract.winmd",
+      "sha256": "e242622a37962546cca4957a048cb0efb26b12d2691d35bec09fdafa534a916a"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Services.Store.StoreContract.winmd",
+      "file": "Windows.Services.Store.StoreContract.winmd",
+      "sha256": "3d6778625b4578785764e814c481191fde4a156d4b4ede33da21b4339164124c"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.FullTrustAppContract.winmd",
+      "file": "Windows.ApplicationModel.FullTrustAppContract.winmd",
+      "sha256": "babcae34101f2521c11d6d5c94ac800dbdc465a5cfd0c6afc4a51a7b9021e8ae"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Services.TargetedContent.TargetedContentContract.winmd",
+      "file": "Windows.Services.TargetedContent.TargetedContentContract.winmd",
+      "sha256": "2ad9726f1ef99a49e8a330b40ab8c441d18310030d168835e62464686bf69edb"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Overlay.OverlayContract.winmd",
+      "file": "Windows.ApplicationModel.Overlay.OverlayContract.winmd",
+      "sha256": "d9d12e62c8960f4747286aad132c58019f99be277f681eb174ad7bcb07875240"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Storage.Provider.CloudFilesContract.winmd",
+      "file": "Windows.Storage.Provider.CloudFilesContract.winmd",
+      "sha256": "8e3de1537a18e668cbe915642334034d69b7bfa74bf562977e948d34240b4686"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Preview.InkWorkspace.PreviewInkWorkspaceContract.winmd",
+      "file": "Windows.ApplicationModel.Preview.InkWorkspace.PreviewInkWorkspaceContract.winmd",
+      "sha256": "861badc634c4869f233ded90ee128912d88700028d50c4239e29436091fc2768"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.Power.Thermal.PowerThermalApiContract.winmd",
+      "file": "Windows.System.Power.Thermal.PowerThermalApiContract.winmd",
+      "sha256": "b8a461f47e07a5b84db4138994be6a86ee785fd146b28b1e9bc56e7735aa7c01"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Preview.Notes.PreviewNotesContract.winmd",
+      "file": "Windows.ApplicationModel.Preview.Notes.PreviewNotesContract.winmd",
+      "sha256": "edac883475255fc2a31687bf69df30fa62fdcbecb1b1b844c40516066a6ebedb"
+    },
+    {
+      "member": "ref/netstandard2.0/windows.system.profile.platformautomaticappsignincontract.winmd",
+      "file": "windows.system.profile.platformautomaticappsignincontract.winmd",
+      "sha256": "f7a39f320d112f0c17fbe8c877c674d65aa584a3629bee840d4ab0e4293ba61a"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Preview.StartupAppsPreviewContract.winmd",
+      "file": "Windows.ApplicationModel.Preview.StartupAppsPreviewContract.winmd",
+      "sha256": "f5b41f426542f8677852ca589e980c5c5366d31391a057ed4d7ddb9147edcbd9"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.Profile.ProfileHardwareTokenContract.winmd",
+      "file": "Windows.System.Profile.ProfileHardwareTokenContract.winmd",
+      "sha256": "8bffa9cda6c991db13ea87acdb17bd606a91adf41a204076ba38ddacf0a40837"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Resources.Management.ResourceIndexerContract.winmd",
+      "file": "Windows.ApplicationModel.Resources.Management.ResourceIndexerContract.winmd",
+      "sha256": "06d112bdc735571f2a05999343114a6371e31dec0041d6a23f64c1884c5ba6fb"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.Profile.ProfileRetailInfoContract.winmd",
+      "file": "Windows.System.Profile.ProfileRetailInfoContract.winmd",
+      "sha256": "7a4684c0c60f6fd8525f14d96bf8b4191067265ac02edc419351d07a30fd36b8"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Search.Core.SearchCoreContract.winmd",
+      "file": "Windows.ApplicationModel.Search.Core.SearchCoreContract.winmd",
+      "sha256": "4db20650546284928299374590badad852d27275eae7f1e2225364f0df53eaae"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.Profile.ProfileSharedModeContract.winmd",
+      "file": "Windows.System.Profile.ProfileSharedModeContract.winmd",
+      "sha256": "b676eecc024c818909b80d9ccf68a8547283cc6a2ebbb84ede63d97ac73312a3"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Search.SearchContract.winmd",
+      "file": "Windows.ApplicationModel.Search.SearchContract.winmd",
+      "sha256": "167a9991303c98243958652f5f21fd7283a49f207459eb8e53f35a770d646dd3"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.Profile.SystemManufacturers.SystemManufacturersContract.winmd",
+      "file": "Windows.System.Profile.SystemManufacturers.SystemManufacturersContract.winmd",
+      "sha256": "ac4d39c3fd99c434ca28c11c06ba5122c7fa5a298907314c2621df5787c202fa"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.SocialInfo.SocialInfoContract.winmd",
+      "file": "Windows.ApplicationModel.SocialInfo.SocialInfoContract.winmd",
+      "sha256": "f9774e89cae8d6f9cc33dbdff4bf09a2622a80aa4800d811edb28e082cad6c8a"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.SystemManagementContract.winmd",
+      "file": "Windows.System.SystemManagementContract.winmd",
+      "sha256": "1dc211047194d08cc8c4a77f55798780e930a698351cb4006ce98f9a9df16022"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.StartupTaskContract.winmd",
+      "file": "Windows.ApplicationModel.StartupTaskContract.winmd",
+      "sha256": "171d9c9ba3830508302e589486e2cc9e02601364acd879452d3a437403c3d751"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.UserProfile.UserProfileContract.winmd",
+      "file": "Windows.System.UserProfile.UserProfileContract.winmd",
+      "sha256": "749e3269ad106c554b1f8510ab23acdb396414eab32b3fea63b847a11cf9d882"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.ApplicationModel.Wallet.WalletContract.winmd",
+      "file": "Windows.ApplicationModel.Wallet.WalletContract.winmd",
+      "sha256": "041f8f2930ecc6ed7039d32486162f915d628b6f8aa88c04926f0fe35419a863"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.System.UserProfile.UserProfileLockScreenContract.winmd",
+      "file": "Windows.System.UserProfile.UserProfileLockScreenContract.winmd",
+      "sha256": "882bd10a7a69b7ded41d26a6fc7565216d52424c873bdd0a7b88e6ccf606673d"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.Custom.CustomDeviceContract.winmd",
+      "file": "Windows.Devices.Custom.CustomDeviceContract.winmd",
+      "sha256": "0c3f188731c4f0380640acb6cd283c6f7d486511fcac919a8915e43e0f2daae2"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.ApplicationSettings.ApplicationsSettingsContract.winmd",
+      "file": "Windows.UI.ApplicationSettings.ApplicationsSettingsContract.winmd",
+      "sha256": "20856c89eba910e0801d24989ef6a5c4b56ef5d65669c9f35859006f52a92cea"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.DevicesLowLevelContract.winmd",
+      "file": "Windows.Devices.DevicesLowLevelContract.winmd",
+      "sha256": "cb227dad2547bff4de93a218294c0777d498caf3bdf56ca3a6ea8acb4ef62dc3"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Core.AnimationMetrics.AnimationMetricsContract.winmd",
+      "file": "Windows.UI.Core.AnimationMetrics.AnimationMetricsContract.winmd",
+      "sha256": "2e5863733925e81d70747ea4f1af67ba9fae0741ab3337f1587b3554a8dfa48b"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.Portable.PortableDeviceContract.winmd",
+      "file": "Windows.Devices.Portable.PortableDeviceContract.winmd",
+      "sha256": "80e8e0d929cbe7cc9edf19c435d67692195ba85c28850aebfc417b8fdff960ad"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Core.CoreWindowDialogsContract.winmd",
+      "file": "Windows.UI.Core.CoreWindowDialogsContract.winmd",
+      "sha256": "df1053da5fb3427517ed597866a3931bbe35ada2b1c686e442cdc1f751aa8553"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.Power.PowerGridApiContract.winmd",
+      "file": "Windows.Devices.Power.PowerGridApiContract.winmd",
+      "sha256": "18caf7fd6a3196f1da4db78bf451bc93c45abcf80f6652d72544079fe42f5ed9"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Input.Preview.Text.PreviewTextContract.winmd",
+      "file": "Windows.UI.Input.Preview.Text.PreviewTextContract.winmd",
+      "sha256": "cdddb71aed5ff5b66eced7930dc454b5a63a19afc16cb2af9a8ba16cb584d071"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.Printers.Extensions.ExtensionsContract.winmd",
+      "file": "Windows.Devices.Printers.Extensions.ExtensionsContract.winmd",
+      "sha256": "d26f0cb22e03d20dcc96d55b8be27762a7fbac93d053ae5217b1a4add1a33711"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Shell.CompanionWindows.CompanionWindowsContract.winmd",
+      "file": "Windows.UI.Shell.CompanionWindows.CompanionWindowsContract.winmd",
+      "sha256": "7d497f040553ef903b1454fad37895b521d4b1e3e77422e294d8b70aa754a782"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.Printers.PrintersContract.winmd",
+      "file": "Windows.Devices.Printers.PrintersContract.winmd",
+      "sha256": "4456146f3e8cac96dd4c94f5b7f700e3d730c2abe157f9ca5444dd905f86942d"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Shell.SecurityAppManagerContract.winmd",
+      "file": "Windows.UI.Shell.SecurityAppManagerContract.winmd",
+      "sha256": "e96bccb8873dbc236ccdd25c8bdd8703b999352a616ecd12ffe1cb9ede45a5e3"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.Scanners.ScannerDeviceContract.winmd",
+      "file": "Windows.Devices.Scanners.ScannerDeviceContract.winmd",
+      "sha256": "a76412285991e251188fb6980548c3e7bf1f2f9cf8c6db32dbda0f7f0d34275a"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Shell.Tasks.AppTaskContract.winmd",
+      "file": "Windows.UI.Shell.Tasks.AppTaskContract.winmd",
+      "sha256": "7500896303a68743efda1e4ad654a6ffa27433a11536aaa0fe84adf130cfcfe5"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.SmartCards.SmartCardBackgroundTriggerContract.winmd",
+      "file": "Windows.Devices.SmartCards.SmartCardBackgroundTriggerContract.winmd",
+      "sha256": "b5af4ef19fea6747262d3cb2c5cfb3718d7c3831ac3b2287dfe8a34d7f563d3e"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Shell.WindowTabManagerContract.winmd",
+      "file": "Windows.UI.Shell.WindowTabManagerContract.winmd",
+      "sha256": "8eab58dc712d8227f30c4a917a076eb6ec3833a90e1fdaa063db1aece7fef9fd"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.SmartCards.SmartCardEmulatorContract.winmd",
+      "file": "Windows.Devices.SmartCards.SmartCardEmulatorContract.winmd",
+      "sha256": "0f5db2033b70f852b5ce2b8afcba9b4cbb405618c6b890c6fdf876ce8d62ac19"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.UIAutomation.UIAutomationContract.winmd",
+      "file": "Windows.UI.UIAutomation.UIAutomationContract.winmd",
+      "sha256": "eda16e0db1747376e89eba76864573f21371a9c8f03b9ac1b2d15b7412bc1837"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Devices.Sms.LegacySmsApiContract.winmd",
+      "file": "Windows.Devices.Sms.LegacySmsApiContract.winmd",
+      "sha256": "ebad73542bcb9c70ea3a39741bc8e9b4627cc9a6c999fad2570154a96e54d2e6"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.ViewManagement.ViewManagementViewScalingContract.winmd",
+      "file": "Windows.UI.ViewManagement.ViewManagementViewScalingContract.winmd",
+      "sha256": "eb037460f2784165bbf897b950a87ee8b81b22fcce42d3ff2db8ba43f040d136"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Foundation.FoundationContract.winmd",
+      "file": "Windows.Foundation.FoundationContract.winmd",
+      "sha256": "6accb918e8bbf34d17568329c4bb85e72142a3e937f874e07f35c644a6e51379"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Xaml.Core.Direct.XamlDirectContract.winmd",
+      "file": "Windows.UI.Xaml.Core.Direct.XamlDirectContract.winmd",
+      "sha256": "53bba1c25339c000236943ca01a009499ada10e16ad018c4cf4907db50e43fb3"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Foundation.UniversalApiContract.winmd",
+      "file": "Windows.Foundation.UniversalApiContract.winmd",
+      "sha256": "3775a216e50fa417f5dc262a776a0ee32e12837bd22e8450339aa8193e3db5c1"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.UI.Xaml.Hosting.HostingContract.winmd",
+      "file": "Windows.UI.Xaml.Hosting.HostingContract.winmd",
+      "sha256": "ecebbbf37606c84179df66488d982bf6ea8c8f921d1e61a629a4df8649e56b3b"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Gaming.Input.GamingInputPreviewContract.winmd",
+      "file": "Windows.Gaming.Input.GamingInputPreviewContract.winmd",
+      "sha256": "9693d2268b11bd130531254f9f740b0218f0ed7c5be16e77d6f5ee47fbd21f68"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Web.Http.Diagnostics.HttpDiagnosticsContract.winmd",
+      "file": "Windows.Web.Http.Diagnostics.HttpDiagnosticsContract.winmd",
+      "sha256": "447c5daef897248f0f37ed03682b89081207de90f832041417e9c84511ec5eb5"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Gaming.Preview.GamesEnumerationContract.winmd",
+      "file": "Windows.Gaming.Preview.GamesEnumerationContract.winmd",
+      "sha256": "967aa6a3d1a8f711db84f3ede3f76a72fb59789767c3d23555810101ba44e181"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Gaming.UI.GameChatOverlayContract.winmd",
+      "file": "Windows.Gaming.UI.GameChatOverlayContract.winmd",
+      "sha256": "da7eb61d17b58d2d33ca5e24f7183c7a7c5e8afcf43f0f18432e49b11769cf6b"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Gaming.UI.GamingUIProviderContract.winmd",
+      "file": "Windows.Gaming.UI.GamingUIProviderContract.winmd",
+      "sha256": "dc135155a83a821a291852d7b8549ab0b99a8b427d3c36fe12ee9e05f9aa1766"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Gaming.XboxLive.StorageApiContract.winmd",
+      "file": "Windows.Gaming.XboxLive.StorageApiContract.winmd",
+      "sha256": "7e3deae1619ce06906b39781bed65b68152822b5a49e47411e1b365a26ad3407"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Globalization.GlobalizationJapanesePhoneticAnalyzerContract.winmd",
+      "file": "Windows.Globalization.GlobalizationJapanesePhoneticAnalyzerContract.winmd",
+      "sha256": "33aa9dfb7992f7bda4ae29322c532390d1eb41b6f6034af33dca88e907561398"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Graphics.Printing3D.Printing3DContract.winmd",
+      "file": "Windows.Graphics.Printing3D.Printing3DContract.winmd",
+      "sha256": "f7f238d010c81125d2d5ba9144fa067b47bc9ba78178798aeeabb894c8e86e06"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Management.Deployment.Preview.DeploymentPreviewContract.winmd",
+      "file": "Windows.Management.Deployment.Preview.DeploymentPreviewContract.winmd",
+      "sha256": "9c4240c4f6a70dde4a2e45f8df85b23c374868dff3d0474d9a362450d312b99a"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Management.Deployment.SharedPackageContainerContract.winmd",
+      "file": "Windows.Management.Deployment.SharedPackageContainerContract.winmd",
+      "sha256": "135b4561187a002e9532423ea867c4a23f251155eae64c07d2933cce73419fb6"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Management.Update.Cluster.ClusterNativeUpdatingContract.winmd",
+      "file": "Windows.Management.Update.Cluster.ClusterNativeUpdatingContract.winmd",
+      "sha256": "77a8f553807ed7be814c95cccf9f59fbaad7e7d3fafa28c45f87ff5a49f739b9"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Management.Update.WindowsUpdateContract.winmd",
+      "file": "Windows.Management.Update.WindowsUpdateContract.winmd",
+      "sha256": "a327b619b925a144b9c01356088b5697353626154d551a4b6f2a73bda1bdaebe"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Management.Workplace.WorkplaceSettingsContract.winmd",
+      "file": "Windows.Management.Workplace.WorkplaceSettingsContract.winmd",
+      "sha256": "467cc5c518544ebc2bff0719c5f6a4159b300dad4f354665f05e756244faae0f"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.AppBroadcasting.AppBroadcastingContract.winmd",
+      "file": "Windows.Media.AppBroadcasting.AppBroadcastingContract.winmd",
+      "sha256": "1f1c06c2012ee1c0983245a1793732730ffaca00fe05458ef173fa8ee5069438"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.AppRecording.AppRecordingContract.winmd",
+      "file": "Windows.Media.AppRecording.AppRecordingContract.winmd",
+      "sha256": "41b4f5f8880e7b0ac5d8a14d676399c57e83250d02e10b2cadcc3932c8c0cb26"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Capture.AppBroadcastContract.winmd",
+      "file": "Windows.Media.Capture.AppBroadcastContract.winmd",
+      "sha256": "eec9763192aced176c4557f7460297c9ee04f9a9c4e75af117db86c32cc676cc"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Capture.AppCaptureContract.winmd",
+      "file": "Windows.Media.Capture.AppCaptureContract.winmd",
+      "sha256": "49d537d0b5554c0203b7f0347ca8253b8c70214a83ab5c80555416144c0cc75d"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Capture.AppCaptureMetadataContract.winmd",
+      "file": "Windows.Media.Capture.AppCaptureMetadataContract.winmd",
+      "sha256": "05a90d89d9111c34b4e0fdc66965631c29f1fe7098805dcff2f128ea9c3f692d"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Capture.CameraCaptureUIContract.winmd",
+      "file": "Windows.Media.Capture.CameraCaptureUIContract.winmd",
+      "sha256": "e76a1750bda6b9081ef15096f0621a6c91fa1191e503e5941a102f76a7d6e3d8"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Capture.GameBarContract.winmd",
+      "file": "Windows.Media.Capture.GameBarContract.winmd",
+      "sha256": "6e12635f370c3391d5df87bb9f4bce652d6411db17f080e1aea0bc51bb07571c"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.Media.Devices.CallControlContract.winmd",
+      "file": "Windows.Media.Devices.CallControlContract.winmd",
+      "sha256": "67785e1fd4fd3233d787b533e49308e7b550d0e2687546514fd01d1975de9dc6"
+    },
+    {
+      "member": "ref/netstandard2.0/Windows.WinMD",
+      "file": "Windows.WinMD",
+      "sha256": "249d4ebdcb399002f7b6dcb50384ad0df3ab6a7cf7087161eda4e43052128e6d"
+    },
+    {
+      "member": "Microsoft.Windows.SDK.Contracts.nuspec",
+      "file": "licenses/winrt/Microsoft.Windows.SDK.Contracts.nuspec",
+      "sha256": "87ff228235bb474bc217ab84bb5e81c3689ac43b95223b8afae9874983e40036"
+    }
+  ]
+}

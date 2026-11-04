@@ -1,0 +1,24 @@
+{
+  "package": "Microsoft.WindowsAppSDK.Base",
+  "version": "2.6.5",
+  "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.base/2.6.5/microsoft.windowsappsdk.base.2.6.5.nupkg",
+  "archive_sha256": "cb9d3c4fb9cd98907709c95832a642cfb0331fd8e69df649f662e96b09b8cb48",
+  "output": "winui",
+  "members": [
+    {
+      "member": "Microsoft.WindowsAppSDK.Base.nuspec",
+      "file": "licenses/winui-base/Microsoft.WindowsAppSDK.Base.nuspec",
+      "sha256": "8a16ad455f91faa4121369b257e62e2428a8615865366f93ec82ad4c5cb8cf42"
+    },
+    {
+      "member": "license.txt",
+      "file": "licenses/winui-base/license.txt",
+      "sha256": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501"
+    },
+    {
+      "member": "NOTICE.txt",
+      "file": "licenses/winui-base/NOTICE.txt",
+      "sha256": "572b43d41dea717dae7dc5de69acb20a74df025e8f5a3c0aa6f7bca02615e23c"
+    }
+  ]
+}

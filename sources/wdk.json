@@ -1,0 +1,24 @@
+{
+  "package": "Microsoft.Windows.WDK.Win32Metadata",
+  "version": "0.13.25-experimental",
+  "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windows.wdk.win32metadata/0.13.25-experimental/microsoft.windows.wdk.win32metadata.0.13.25-experimental.nupkg",
+  "archive_sha256": "79079a449d8f621052bcaf13039e411d1c1b77aec4a89cf04d96518d0a619617",
+  "output": "wdk",
+  "members": [
+    {
+      "member": "Windows.Wdk.winmd",
+      "file": "Windows.Wdk.winmd",
+      "sha256": "54b8e48866b0a7e066981b63bb6f82fc6947fe8c57e2b5cb4513b1537aa836c2"
+    },
+    {
+      "member": "Microsoft.Windows.WDK.Win32Metadata.nuspec",
+      "file": "licenses/wdk/Microsoft.Windows.WDK.Win32Metadata.nuspec",
+      "sha256": "87d8ea99f69fbc84085c88054227e51197c196916c6460d28cb2fdc49895d077"
+    },
+    {
+      "member": "sdk_license.txt",
+      "file": "licenses/wdk/sdk_license.txt",
+      "sha256": "0e97876eaa1fc79558e0d51dc0bee286d36dca8e95f7876259ffdf947396bca1"
+    }
+  ]
+}

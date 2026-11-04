@@ -1,0 +1,17 @@
+{
+  "kind": "generated",
+  "generator_revision": "57b28b43478aeb02e7688f6d64fc12bedda43e5a",
+  "sdk_version": "10.0.26100.0",
+  "msvc_version": "14.51.36231",
+  "architectures": [
+    "x86",
+    "x64",
+    "arm64"
+  ],
+  "constraints": "Query metadata generated from Microsoft UCRT and VCRuntime headers; redistribution permission remains unconfirmed.",
+  "files": {
+    "UCRT.winmd": "2eb555925ed830c0665f7a7cbcb8a9807c57ab75434b21cea8d1cae3dfbd05e3",
+    "manifest.json": "ed594bc9181d038fcd5c2064e9fcc2fd9dc1fc5b4205b247833a42f16dc57b5a",
+    "LICENSE": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0"
+  }
+}

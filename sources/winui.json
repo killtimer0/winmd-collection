@@ -1,0 +1,39 @@
+{
+  "package": "Microsoft.WindowsAppSDK.WinUI",
+  "version": "2.6.5",
+  "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.winui/2.6.5/microsoft.windowsappsdk.winui.2.6.5.nupkg",
+  "archive_sha256": "8cd902f8abaf4ac0f75bdd187fd420eb98419818f39ab5e853ed126bc26a6af9",
+  "output": "winui",
+  "members": [
+    {
+      "member": "metadata/Microsoft.UI.Text.winmd",
+      "file": "Microsoft.UI.Text.winmd",
+      "sha256": "eaeebebbe2b789acd957f55e5cb1bb45ed4331e6a0408617da017fc4382ba1ee"
+    },
+    {
+      "member": "metadata/Microsoft.UI.Xaml.winmd",
+      "file": "Microsoft.UI.Xaml.winmd",
+      "sha256": "72bcc3558747aa127364e7b06e55dd165784a15a77efc640b0c18080579d167f"
+    },
+    {
+      "member": "Microsoft.WindowsAppSDK.WinUI.nuspec",
+      "file": "licenses/winui/Microsoft.WindowsAppSDK.WinUI.nuspec",
+      "sha256": "98a735bdd38560dfb51417e4658aed3bb007da5c3e323ce26b599197f1b9071e"
+    },
+    {
+      "member": "license.txt",
+      "file": "licenses/winui/license.txt",
+      "sha256": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501"
+    },
+    {
+      "member": "NOTICE.txt",
+      "file": "licenses/winui/NOTICE.txt",
+      "sha256": "e25393c0d340a1821827b093fa4dbbfcccd8feb7bf769e7fa773e3955cd5314b"
+    },
+    {
+      "member": "tools/NOTICE.txt",
+      "file": "licenses/winui/tools/NOTICE.txt",
+      "sha256": "4a9321fd173ebf4e8bbc79130794d4c3fe233acccbf7db8765e0addb8fbfb8ca"
+    }
+  ]
+}

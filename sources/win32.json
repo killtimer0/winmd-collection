@@ -1,7 +1,23 @@
 {
   "package": "Microsoft.Windows.SDK.Win32Metadata",
   "version": "71.0.37-preview",
-  "file": "Windows.Win32.winmd",
-  "sha256": "73e57def24d91f2ec025238100099d5333dd441cab5e843cd2fa8f0617472d56",
+  "archive_sha256": "fdc95c25641c6d69e9766408b328f9e4c3d1e63a0a319277bcdb9e4550496e45",
+  "members": [
+    {
+      "member": "Windows.Win32.winmd",
+      "file": "Windows.Win32.winmd",
+      "sha256": "73e57def24d91f2ec025238100099d5333dd441cab5e843cd2fa8f0617472d56"
+    },
+    {
+      "member": "Microsoft.Windows.SDK.Win32Metadata.nuspec",
+      "file": "licenses/win32/Microsoft.Windows.SDK.Win32Metadata.nuspec",
+      "sha256": "7ba4a4c866c36970efac0577e70a04abd1cf79a0170279e3b62145be9dda67aa"
+    },
+    {
+      "member": "sdk_license.txt",
+      "file": "licenses/win32/sdk_license.txt",
+      "sha256": "0e97876eaa1fc79558e0d51dc0bee286d36dca8e95f7876259ffdf947396bca1"
+    }
+  ],
   "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windows.sdk.win32metadata/71.0.37-preview/microsoft.windows.sdk.win32metadata.71.0.37-preview.nupkg"
 }
