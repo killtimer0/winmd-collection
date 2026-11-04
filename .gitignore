@@ -1,0 +1,4 @@
+/tmp/
+/artifacts/
+**/target/
+**/__pycache__/
