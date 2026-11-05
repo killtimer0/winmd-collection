@@ -1672,7 +1672,7 @@ impl Clang {
     }
 }
 
-/// Owns libclang state; field order ensures TUs drop before the library unloads.
+/// Owns translation units and their index.
 struct ParsedInputs {
     args: Vec<String>,
     h_tus: Vec<(String, TranslationUnit)>,

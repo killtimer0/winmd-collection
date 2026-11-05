@@ -7,21 +7,21 @@ pub struct Library;
 impl Library {
     pub fn new() -> Result<Self, Error> {
         #[cfg(feature = "runtime")]
-        load().map_err(|e| Error::new(&format!("failed to load libclang: {e}"), "", 0, 0))?;
+        {
+            use std::sync::{Arc, OnceLock};
+            // libclang can retain process-exit state after a parsing thread finishes.
+            static LIBRARY: OnceLock<Result<Arc<SharedLibrary>, String>> = OnceLock::new();
+            let library = LIBRARY
+                .get_or_init(|| load_manually().map(Arc::new))
+                .as_ref()
+                .map_err(|e| Error::new(&format!("failed to load libclang: {e}"), "", 0, 0))?;
+            set_library(Some(Arc::clone(library)));
+        }
         Ok(Self)
     }
 
     pub fn version(&self) -> String {
         to_string(unsafe { clang_getClangVersion() })
-    }
-}
-
-impl Drop for Library {
-    fn drop(&mut self) {
-        #[cfg(feature = "runtime")]
-        {
-            _ = unload();
-        }
     }
 }
 

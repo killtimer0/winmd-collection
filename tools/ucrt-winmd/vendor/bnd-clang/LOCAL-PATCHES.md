@@ -7,6 +7,10 @@ with standalone package values.
 
 Changes in `vendored/windows-clang/src/`:
 
+- `cx.rs`: keep a process-lifetime runtime library shared through clang-sys
+  thread-local dispatch. Unloading official Windows libclang after a version
+  query or parsing thread can cause access violations.
+
 - `canon.rs`, `typedef.rs`: preserve selected CRT semantic aliases at definition
   and reference sites instead of collapsing them to ABI-equivalent primitives.
   The backing definitions of `size_t`, `uintptr_t`, `intptr_t` and `ptrdiff_t`
