@@ -1,0 +1,11 @@
+{
+  "package": "Microsoft.Web.WebView2",
+  "version": "1.0.3719.77",
+  "url": "https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/1.0.3719.77/microsoft.web.webview2.1.0.3719.77.nupkg",
+  "archive_sha256": "2f6be3a10a1a8d6d1fde986af4131dab344f8181fffe75590824e0f4b037ed73",
+  "members": [
+    {"member": "lib/Microsoft.Web.WebView2.Core.winmd", "file": "Microsoft.Web.WebView2.Core.winmd", "sha256": "88779fd2dbd142738339de337a07a7a111257fa972b9ee8d4618c34902f44f49"},
+    {"member": "LICENSE.txt", "file": "licenses/webview2/LICENSE.txt", "sha256": "0af8f1b807512aae39c2ac1aa4d0cae65cabecb6fd554b8439a5162a0d6eca55"},
+    {"member": "Microsoft.Web.WebView2.nuspec", "file": "licenses/webview2/Microsoft.Web.WebView2.nuspec", "sha256": "8664509b904eec16bf806dede9297b87649f8e8e2e391083a57cc7ed6a4f873e"}
+  ]
+}

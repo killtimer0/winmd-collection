@@ -6,7 +6,8 @@ from pathlib import PurePosixPath, PureWindowsPath
 SOURCES = {
     "win32": ("CreateFileW", ()), "wdk": ("DRIVER_OBJECT", ("win32",)),
     "winrt": ("Uri", ()), "ucrt": ("printf", ()),
-    "winui": ("Button", ("winrt",)), "win2d": ("CanvasControl", ("winrt", "winui")),
+    "webview2": ("CoreWebView2", ("winrt",)),
+    "winui": ("Button", ("winrt", "webview2")), "win2d": ("CanvasControl", ("winrt", "webview2", "winui")),
 }
 SDK_URL = "https://developer.microsoft.com/windows/downloads/windows-sdk/"
 LICENSE_NOTES = """# 许可说明
@@ -99,7 +100,12 @@ def write_summary(root, sources, entries):
                        "MSVC 来源：https://visualstudio.microsoft.com/downloads/", f"架构：{', '.join(source['architectures'])}",
                        f"生成清单 SHA-256：`{source['generation_manifest_sha256']}`", source['constraints']]
         else:
-            details = [f"包：{source['package']} {source['version']}", f"来源：{source['url']}", f"包 SHA-256：`{source['archive_sha256']}`"]
+            details = []
+            for package in source.get("packages", [source]):
+                details.extend([f"包：{package['package']} {package['version']}", f"来源：{package['url']}", f"包 SHA-256：`{package['archive_sha256']}`"])
+            if source.get("kind") == "merged":
+                details.extend([f"合并工具：Windows SDK {source['sdk_version']} mdmerge，命名空间深度 1",
+                                f"mdmerge SHA-256：`{source['mdmerge_sha256']}`"])
         dependencies = SOURCES[source.get("output", name)][1]
         if dependencies:
             details.append(f"依赖：{', '.join(dependencies)}")

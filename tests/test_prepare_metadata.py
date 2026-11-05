@@ -16,6 +16,57 @@ spec.loader.exec_module(prepare)
 
 
 class PreparationTests(unittest.TestCase):
+    def test_merge_publishes_only_aggregate_and_licenses_after_success(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            (root / "sources").mkdir()
+            sdk = root / "SDK"
+            metadata = sdk / "UnionMetadata/10.0.10/Windows.winmd"
+            metadata.parent.mkdir(parents=True)
+            metadata.write_bytes(b"system metadata")
+            tool = sdk / "bin/10.0.10/x64/mdmerge.exe"
+            tool.parent.mkdir(parents=True)
+            tool.write_bytes(b"tool")
+            archive = root / "package.zip"
+            with zipfile.ZipFile(archive, "w") as z:
+                z.writestr("component", b"component")
+                z.writestr("license", b"license")
+                z.writestr("webview", b"reference")
+            package = {"members": [
+                {"member": "component", "file": "Microsoft.UI.winmd", "sha256": prepare.digest(b"component")},
+                {"member": "license", "file": "licenses/winui/license.txt", "sha256": prepare.digest(b"license")}]}
+            webview = {"members": [{"member": "webview", "file": "Microsoft.Web.WebView2.Core.winmd", "sha256": prepare.digest(b"reference")}]}
+            record = root / "sources/winui.json"
+            source = {"kind": "merged", "packages": [package], "files": {}}
+            record.write_text(json.dumps(source))
+            output = root / "artifacts/Microsoft.winmd"
+            prepare.write_files({output: b"previous"})
+
+            def merge(command, check):
+                self.assertTrue(check)
+                self.assertEqual(command[0], str(tool))
+                inputs = Path(command[command.index("-i") + 1])
+                self.assertEqual((inputs / "Microsoft.UI.winmd").read_bytes(), b"component")
+                self.assertEqual(list(inputs.glob("*.winmd")), [inputs / "Microsoft.UI.winmd"])
+                self.assertEqual((inputs.parent / "references/Microsoft.Web.WebView2.Core.winmd").read_bytes(), b"reference")
+                destination = Path(command[command.index("-o") + 1])
+                prepare.write_files({destination / "Microsoft.winmd": b"merged"})
+
+            with patch.object(prepare, "ROOT", root), patch.object(prepare, "find_windows_winmd", return_value=metadata), patch.object(prepare, "download", return_value=archive):
+                before = record.read_bytes()
+                for failure in (prepare.subprocess.CalledProcessError(2, "mdmerge"), None):
+                    with patch.object(prepare.subprocess, "run", side_effect=failure):
+                        with self.assertRaises((prepare.subprocess.CalledProcessError, FileNotFoundError)):
+                            prepare.merge_winui(source, webview)
+                    self.assertEqual(record.read_bytes(), before)
+                    self.assertEqual(output.read_bytes(), b"previous")
+                with patch.object(prepare.subprocess, "run", side_effect=merge):
+                    prepare.merge_winui(source, webview)
+                self.assertEqual(output.read_bytes(), b"merged")
+                self.assertEqual(set(json.loads(record.read_bytes())["files"]), {"Microsoft.winmd", "licenses/winui/license.txt"})
+                self.assertEqual(list((root / "artifacts").glob("*.winmd")), [output])
+                self.assertEqual(list((root / "tmp").iterdir()), [])
+
     def test_generated_import_uses_verified_manifest_not_other_machine_hash(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

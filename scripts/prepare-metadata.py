@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 import urllib.request
 import zipfile
 from metadata import check, digest, output_paths, read_sources, write_files
@@ -29,7 +30,7 @@ def download(source):
     return package
 
 
-def prepare(name, source):
+def extract(source, directory):
     package = download(source)
     with zipfile.ZipFile(package) as archive:
         # Verify the complete selected set before replacing any output.
@@ -39,13 +40,45 @@ def prepare(name, source):
             check(archive.read(duplicate["member"]), duplicate["sha256"])
             if duplicate["sha256"] not in {m["sha256"] for m in source["members"]}:
                 raise ValueError("Duplicate member does not match selected output")
-        paths = output_paths(ROOT / "artifacts", (member["file"] for member in source["members"]))
+        paths = output_paths(directory, (member["file"] for member in source["members"]))
         for member, path in zip(source["members"], paths):
             data = archive.read(member["member"])
             check(data, member["sha256"])
             contents[path] = data
+    return contents
+
+
+def prepare(name, source):
+    contents = extract(source, ROOT / "artifacts")
     write_files(contents)
     print(f"Verified {name}: {len(contents)} files from {source['package']} {source['version']}")
+
+
+def merge_winui(source, webview, sdk_include=None):
+    metadata = find_windows_winmd(sdk_include)
+    sdk = metadata.parents[2]
+    tool = sdk / "bin" / metadata.parent.name / "x64/mdmerge.exe"
+    work = ROOT / "tmp"
+    work.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=work) as temp:
+        directory = Path(temp).resolve()
+        inputs = directory / "input"
+        output_paths(inputs, (m["file"] for p in source["packages"] for m in p["members"]))
+        contents = {}
+        for package in source["packages"]:
+            contents.update(extract(package, inputs))
+        write_files(contents)
+        references = directory / "references"
+        write_files(extract(webview, references))
+        subprocess.run([str(tool), "-i", str(inputs), "-o", str(directory / "output"), "-n", "1",
+                        "-partial", "-metadata_dir", str(metadata.parent), "-metadata_dir", str(references), "-v"], check=True)
+        delivery = {"Microsoft.winmd": (directory / "output/Microsoft.winmd").read_bytes()}
+        delivery.update((p.relative_to(inputs).as_posix(), data) for p, data in contents.items() if p.suffix.lower() != ".winmd")
+        source.update(sdk_version=metadata.parent.name, mdmerge_sha256=digest(tool.read_bytes()),
+                      files={name: digest(data) for name, data in delivery.items()})
+        record = (json.dumps(source, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        write_files({ROOT / "artifacts" / name: data for name, data in delivery.items()} | {ROOT / "sources/winui.json": record})
+    print("Prepared winui: Microsoft.winmd from Windows App SDK components")
 
 
 def import_ucrt(output):
@@ -108,12 +141,14 @@ def main():
     sources = {name: source for name, source in read_sources(ROOT).items() if source.get("kind") != "generated"}
     parser.add_argument("--source", choices=sources, action="append", help="prepare only selected source(s); default: all packages and SDK WinRT metadata")
     parser.add_argument("--ucrt-output", type=Path, help="also import the checked UCRT generator output directory")
-    parser.add_argument("--sdk-include", type=Path, help="SDK Include/<version> directory for WinRT; default: newest installed SDK")
+    parser.add_argument("--sdk-include", type=Path, help="SDK Include/<version> directory for WinRT and mdmerge; default: newest installed SDK")
     args = parser.parse_args()
     for name in args.source or sources:
         source = sources[name]
         if source.get("kind") == "sdk":
             import_winrt(args.sdk_include)
+        elif source.get("kind") == "merged":
+            merge_winui(source, sources["webview2"], args.sdk_include)
         else:
             prepare(name, source)
     if args.ucrt_output:

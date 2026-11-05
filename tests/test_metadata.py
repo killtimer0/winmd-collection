@@ -79,6 +79,8 @@ class MetadataTests(unittest.TestCase):
             ({"kind": "generated", "generator_revision": "revision", "sdk_version": "10.0.10", "msvc_version": "14.1",
               "architectures": ["x86", "x64", "arm64"], "generation_manifest_sha256": "b" * 64, "constraints": "Redistribution unconfirmed."},
              ["revision", "14.1", "x86, x64, arm64", "b" * 64, "Redistribution unconfirmed."]),
+            ({"kind": "merged", "packages": [self.record], "sdk_version": "10.0.10", "mdmerge_sha256": "c" * 64},
+             ["Sample.Package 1.2", self.record["url"], "10.0.10 mdmerge", "c" * 64]),
         ]:
             self.record = dict(record, files=files)
             self.assertEqual(self.collect()["sample"], [self.output / "data.winmd"])

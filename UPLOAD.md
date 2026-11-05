@@ -10,8 +10,7 @@
 - 成品 WinMD 位于 `artifacts/`。
 - 交付时保留 `SHA256SUMS`、`SOURCES.md` 和 `licenses/`。它们汇总文件哈希、来源版本及链接，并保留许可和依赖说明。
 - UCRT 的详细生成 manifest 位于 `tools/ucrt-winmd/out/`；汇总中记录其哈希、生成器源码版本和 SDK／MSVC 版本。
-- 这些来源不与 Winlex 版本一一绑定。更新某一来源时单独重新准备、校验并验证其依赖。
-- WinRT 使用 SDK 的单个 `Windows.winmd`。
+- 更新来源后，重新准备并验证元数据及其依赖。
 
 ## 地址
 

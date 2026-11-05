@@ -67,12 +67,9 @@ Maintainer checks do not use Winlex:
 ./build.ps1 -Check
 ```
 
-This runs Rust and toolchain-script contracts, an independent Clang AST audit
-and Clippy. Use `-PythonPath` when Python is not on PATH. The contracts compare
-metadata across architecture baselines, combined output and RDL round trips.
-The audit reports declaration coverage and compares parameter counts, varargs and
-record field names/order against the Clang AST. Python scripts must run without
-`-O` so their assertions execute.
+This checks generated metadata against the selected headers, architecture
+baselines and RDL round trips, and runs Clippy. Use `-PythonPath` when Python is
+not on PATH. Python scripts must run without `-O` so their assertions execute.
 
 To check queries and layouts with Winlex, supply a compatible CLI:
 
@@ -83,8 +80,8 @@ To check queries and layouts with Winlex, supply a compatible CLI:
 Standalone commands are
 `python verify.py --winlex PATH` and
 `python verify_multiarch.py --winlex PATH`.
-Layout checks compile assertions against the selected headers for all three
-architectures; expected sizes, alignments and field offsets are not SDK snapshots.
+Layout checks compile assertions against the selected headers to verify sizes,
+alignments and field offsets for each supported architecture.
 
 ## Metadata conventions and coverage
 

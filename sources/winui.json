@@ -1,39 +1,233 @@
 {
-  "package": "Microsoft.WindowsAppSDK.WinUI",
-  "version": "2.6.5",
-  "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.winui/2.6.5/microsoft.windowsappsdk.winui.2.6.5.nupkg",
-  "archive_sha256": "8cd902f8abaf4ac0f75bdd187fd420eb98419818f39ab5e853ed126bc26a6af9",
-  "output": "winui",
-  "members": [
+  "kind": "merged",
+  "packages": [
     {
-      "member": "metadata/Microsoft.UI.Text.winmd",
-      "file": "Microsoft.UI.Text.winmd",
-      "sha256": "eaeebebbe2b789acd957f55e5cb1bb45ed4331e6a0408617da017fc4382ba1ee"
+      "package": "Microsoft.WindowsAppSDK.Base",
+      "version": "2.6.5",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.base/2.6.5/microsoft.windowsappsdk.base.2.6.5.nupkg",
+      "archive_sha256": "cb9d3c4fb9cd98907709c95832a642cfb0331fd8e69df649f662e96b09b8cb48",
+      "members": [
+        {
+          "member": "Microsoft.WindowsAppSDK.Base.nuspec",
+          "file": "licenses/winui-base/Microsoft.WindowsAppSDK.Base.nuspec",
+          "sha256": "8a16ad455f91faa4121369b257e62e2428a8615865366f93ec82ad4c5cb8cf42"
+        },
+        {
+          "member": "license.txt",
+          "file": "licenses/winui-base/license.txt",
+          "sha256": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501"
+        },
+        {
+          "member": "NOTICE.txt",
+          "file": "licenses/winui-base/NOTICE.txt",
+          "sha256": "572b43d41dea717dae7dc5de69acb20a74df025e8f5a3c0aa6f7bca02615e23c"
+        }
+      ]
     },
     {
-      "member": "metadata/Microsoft.UI.Xaml.winmd",
-      "file": "Microsoft.UI.Xaml.winmd",
-      "sha256": "72bcc3558747aa127364e7b06e55dd165784a15a77efc640b0c18080579d167f"
+      "package": "Microsoft.WindowsAppSDK.Foundation",
+      "version": "2.6.5",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.foundation/2.6.5/microsoft.windowsappsdk.foundation.2.6.5.nupkg",
+      "archive_sha256": "548033e51be965804f7119e1936fe7f78f324d668becb731fcacb101f3bb18e4",
+      "members": [
+        {
+          "member": "metadata/Microsoft.Windows.ApplicationModel.Background.UniversalBGTask.winmd",
+          "file": "Microsoft.Windows.ApplicationModel.Background.UniversalBGTask.winmd",
+          "sha256": "d8b60fb45f2715e84cf76678ccb2b60edd824e8f40cda08ba7670ef5e75bf044"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.ApplicationModel.WindowsAppRuntime.winmd",
+          "file": "Microsoft.Windows.ApplicationModel.WindowsAppRuntime.winmd",
+          "sha256": "e87fd14d1d7295339767c8c7732189a3ca95fd32dad2aff121545e97a3bb7354"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.AppNotifications.winmd",
+          "file": "Microsoft.Windows.AppNotifications.winmd",
+          "sha256": "737f4aabb8f0a0639a78ced96c5fff760802bd879fa7a9eca45f105d0d5a8190"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.Foundation.winmd",
+          "file": "Microsoft.Windows.Foundation.winmd",
+          "sha256": "8814d4c9ccd16715f56282c5b724a8f5a8097b0e2d923f622eff27366b3cc86f"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.Management.Deployment.winmd",
+          "file": "Microsoft.Windows.Management.Deployment.winmd",
+          "sha256": "f377b87c75c0f242014a28a7960d7352a39c005201025e978bc3a2699c25d187"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.PushNotifications.winmd",
+          "file": "Microsoft.Windows.PushNotifications.winmd",
+          "sha256": "12b97f4d14ab85f4d0716b1b37bc6d0d8e2604cd165decfabcd80d70cee06f43"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.System.winmd",
+          "file": "Microsoft.Windows.System.winmd",
+          "sha256": "6ed062e1f7ec7a6bcdc44f41848cd9d26c197f5ea0ce5ae70bb990c7d1644d94"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.ApplicationModel.Background.winmd",
+          "file": "Microsoft.Windows.ApplicationModel.Background.winmd",
+          "sha256": "9266dbc78ee7dab0c68cee35f9df6af0ccef1e746fe879c4ffc48dfa6263121f"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.ApplicationModel.Resources.winmd",
+          "file": "Microsoft.Windows.ApplicationModel.Resources.winmd",
+          "sha256": "5d8811b8cc57e23db73d431056471b842dd4a517b4933fd9cc4df3c467c23e43"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.AppNotifications.Builder.winmd",
+          "file": "Microsoft.Windows.AppNotifications.Builder.winmd",
+          "sha256": "be15bbe08cbbc0387d9226e5279b85903c44069f94f1dbcd135a8bca82b1de4c"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.Globalization.winmd",
+          "file": "Microsoft.Windows.Globalization.winmd",
+          "sha256": "a901f4431761043e417e12803ad99739ca387944d188b536b8f4ba86d78fdd1d"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.Storage.Pickers.winmd",
+          "file": "Microsoft.Windows.Storage.Pickers.winmd",
+          "sha256": "0c525d8c4566b0f82a74c1136cb5fd1f3058ab0adf22134d15f7a56e57c8fc70"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.System.Power.winmd",
+          "file": "Microsoft.Windows.System.Power.winmd",
+          "sha256": "8940dbf74c0920ef08a30b13cbed8f9f580bdabaf65b2c6880f06e71de12160c"
+        },
+        {
+          "member": "metadata/Microsoft.Security.Authentication.OAuth.winmd",
+          "file": "Microsoft.Security.Authentication.OAuth.winmd",
+          "sha256": "0a5b730b03eadb18263f98f8a8c7a4476c517789a66b5625544b13ba8213e34d"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.ApplicationModel.DynamicDependency.winmd",
+          "file": "Microsoft.Windows.ApplicationModel.DynamicDependency.winmd",
+          "sha256": "44bc4d97fd53db80430f4f891db0b7c8be67c73b95890c6546cc231540d0df99"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.AppLifecycle.winmd",
+          "file": "Microsoft.Windows.AppLifecycle.winmd",
+          "sha256": "47a60a4ee8daa0b57d2fb0715ff43d5732d33daba21b73043b3a25412ef5bfc0"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.BadgeNotifications.winmd",
+          "file": "Microsoft.Windows.BadgeNotifications.winmd",
+          "sha256": "5d4860ffbfa11726e676dade24cf9f1b3669900692e2750c20635f2f0eacb2d6"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.Media.Capture.winmd",
+          "file": "Microsoft.Windows.Media.Capture.winmd",
+          "sha256": "8d3f4405cd89e29baf7e730bcb3f93ba8c9525433db60b461fca0e1dac9f6c6c"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.Security.AccessControl.winmd",
+          "file": "Microsoft.Windows.Security.AccessControl.winmd",
+          "sha256": "b2e495d10d0dac9fe555fd54edaf9ed7e65d61992b28b70d5380b95d7738ee91"
+        },
+        {
+          "member": "metadata/Microsoft.Windows.Storage.winmd",
+          "file": "Microsoft.Windows.Storage.winmd",
+          "sha256": "78f81a794a6bf33eda3d2391c84c0cef7cf2ef7d592e52e4cf41b70b942dd51c"
+        },
+        {
+          "member": "Microsoft.WindowsAppSDK.Foundation.nuspec",
+          "file": "licenses/winui-foundation/Microsoft.WindowsAppSDK.Foundation.nuspec",
+          "sha256": "a7f191334d5f2254aff8cf0075c1ef1d7e9c1f5e75e359ab0723d26256e5562a"
+        },
+        {
+          "member": "license.txt",
+          "file": "licenses/winui-foundation/license.txt",
+          "sha256": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501"
+        }
+      ]
     },
     {
-      "member": "Microsoft.WindowsAppSDK.WinUI.nuspec",
-      "file": "licenses/winui/Microsoft.WindowsAppSDK.WinUI.nuspec",
-      "sha256": "98a735bdd38560dfb51417e4658aed3bb007da5c3e323ce26b599197f1b9071e"
+      "package": "Microsoft.WindowsAppSDK.InteractiveExperiences",
+      "version": "2.6.5",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.interactiveexperiences/2.6.5/microsoft.windowsappsdk.interactiveexperiences.2.6.5.nupkg",
+      "archive_sha256": "3782df5d796dfe872175da0db2b64b616611532fd14b06d9e2102895286df136",
+      "members": [
+        {
+          "member": "metadata/10.0.17763.0/Microsoft.Graphics.winmd",
+          "file": "Microsoft.Graphics.winmd",
+          "sha256": "00ba3eeb2c23421951a0f434c6ad2d58e9755a5a609db8c974c8f74c29a728fc"
+        },
+        {
+          "member": "metadata/10.0.17763.0/Microsoft.UI.winmd",
+          "file": "Microsoft.UI.winmd",
+          "sha256": "addf153f0f1796acbcc36cb865d84e2540ab6f26aa95f6189db73a7b9688b153"
+        },
+        {
+          "member": "metadata/10.0.17763.0/Microsoft.Foundation.winmd",
+          "file": "Microsoft.Foundation.winmd",
+          "sha256": "826c64beb93d355e68d99ede5603bcb31aec6a462d5fc8bf3bd1d8c83464a1c4"
+        },
+        {
+          "member": "Microsoft.WindowsAppSDK.InteractiveExperiences.nuspec",
+          "file": "licenses/winui-interactive/Microsoft.WindowsAppSDK.InteractiveExperiences.nuspec",
+          "sha256": "9e19e12c83ea2edbc783e89aee7950920f03a750c118c352e02421905b7a8988"
+        },
+        {
+          "member": "license.txt",
+          "file": "licenses/winui-interactive/license.txt",
+          "sha256": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501"
+        }
+      ]
     },
     {
-      "member": "license.txt",
-      "file": "licenses/winui/license.txt",
-      "sha256": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501"
-    },
-    {
-      "member": "NOTICE.txt",
-      "file": "licenses/winui/NOTICE.txt",
-      "sha256": "e25393c0d340a1821827b093fa4dbbfcccd8feb7bf769e7fa773e3955cd5314b"
-    },
-    {
-      "member": "tools/NOTICE.txt",
-      "file": "licenses/winui/tools/NOTICE.txt",
-      "sha256": "4a9321fd173ebf4e8bbc79130794d4c3fe233acccbf7db8765e0addb8fbfb8ca"
+      "package": "Microsoft.WindowsAppSDK.WinUI",
+      "version": "2.6.5",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.windowsappsdk.winui/2.6.5/microsoft.windowsappsdk.winui.2.6.5.nupkg",
+      "archive_sha256": "8cd902f8abaf4ac0f75bdd187fd420eb98419818f39ab5e853ed126bc26a6af9",
+      "members": [
+        {
+          "member": "metadata/Microsoft.UI.Text.winmd",
+          "file": "Microsoft.UI.Text.winmd",
+          "sha256": "eaeebebbe2b789acd957f55e5cb1bb45ed4331e6a0408617da017fc4382ba1ee"
+        },
+        {
+          "member": "metadata/Microsoft.UI.Xaml.winmd",
+          "file": "Microsoft.UI.Xaml.winmd",
+          "sha256": "72bcc3558747aa127364e7b06e55dd165784a15a77efc640b0c18080579d167f"
+        },
+        {
+          "member": "Microsoft.WindowsAppSDK.WinUI.nuspec",
+          "file": "licenses/winui/Microsoft.WindowsAppSDK.WinUI.nuspec",
+          "sha256": "98a735bdd38560dfb51417e4658aed3bb007da5c3e323ce26b599197f1b9071e"
+        },
+        {
+          "member": "license.txt",
+          "file": "licenses/winui/license.txt",
+          "sha256": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501"
+        },
+        {
+          "member": "NOTICE.txt",
+          "file": "licenses/winui/NOTICE.txt",
+          "sha256": "e25393c0d340a1821827b093fa4dbbfcccd8feb7bf769e7fa773e3955cd5314b"
+        },
+        {
+          "member": "tools/NOTICE.txt",
+          "file": "licenses/winui/tools/NOTICE.txt",
+          "sha256": "4a9321fd173ebf4e8bbc79130794d4c3fe233acccbf7db8765e0addb8fbfb8ca"
+        }
+      ]
     }
-  ]
+  ],
+  "files": {
+    "Microsoft.winmd": "752f3afaac4b7ec0b419a474aeca46cc896f9788e64208ed77e35c1b0105fcb0",
+    "licenses/winui-base/Microsoft.WindowsAppSDK.Base.nuspec": "8a16ad455f91faa4121369b257e62e2428a8615865366f93ec82ad4c5cb8cf42",
+    "licenses/winui-base/license.txt": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501",
+    "licenses/winui-base/NOTICE.txt": "572b43d41dea717dae7dc5de69acb20a74df025e8f5a3c0aa6f7bca02615e23c",
+    "licenses/winui-foundation/Microsoft.WindowsAppSDK.Foundation.nuspec": "a7f191334d5f2254aff8cf0075c1ef1d7e9c1f5e75e359ab0723d26256e5562a",
+    "licenses/winui-foundation/license.txt": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501",
+    "licenses/winui-interactive/Microsoft.WindowsAppSDK.InteractiveExperiences.nuspec": "9e19e12c83ea2edbc783e89aee7950920f03a750c118c352e02421905b7a8988",
+    "licenses/winui-interactive/license.txt": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501",
+    "licenses/winui/Microsoft.WindowsAppSDK.WinUI.nuspec": "98a735bdd38560dfb51417e4658aed3bb007da5c3e323ce26b599197f1b9071e",
+    "licenses/winui/license.txt": "5b11e6347756e40fe0274bc08c97f89201b94f0d50181a09a00f1f4740840501",
+    "licenses/winui/NOTICE.txt": "e25393c0d340a1821827b093fa4dbbfcccd8feb7bf769e7fa773e3955cd5314b",
+    "licenses/winui/tools/NOTICE.txt": "4a9321fd173ebf4e8bbc79130794d4c3fe233acccbf7db8765e0addb8fbfb8ca"
+  },
+  "sdk_version": "10.0.28000.0",
+  "mdmerge_sha256": "c306d84ee46538924042ee540088b88eb86e209a62c8874eb235ed865112be42"
 }
