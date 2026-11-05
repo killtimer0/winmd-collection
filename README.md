@@ -1,10 +1,10 @@
 # winmd-collection
 
-独立准备 Windows 元数据的工具集合。元数据按来源分别获取、生成和验证，不合并为一个大 WinMD，也不绑定 Winlex 版本。
+为 Winlex 准备的 Windows 元数据：下载官方包、生成 UCRT 元数据，再验证和打包。各来源单独更新、单独打包。
 
 ## 获取与验证
 
-需要 Python 3.10+；全部六类来源还需按下文准备 UCRT 生成环境。完整准备顺序：
+需要 Python 3.10+。生成 UCRT 前，先按[生成器文档](tools/ucrt-winmd/README.md#prerequisites)安装构建工具。
 
 ```powershell
 pwsh tools/ucrt-winmd/build.ps1 -Check
@@ -13,33 +13,34 @@ python scripts/verify-metadata.py --winlex 'D:/Tools/winlex.exe'
 python scripts/package-metadata.py
 ```
 
-下载缓存位于 `tmp/deps/`，成品及逐来源压缩包和 SHA-256 清单位于 `artifacts/`。可使用 `--source win32` 等选项只准备指定包；WinUI 还需 `winui-base`、`winui-foundation`、`winui-interactive`。验证显式加载 WDK + Win32、WinUI + WinRT、Win2D + WinUI + WinRT，不将所有来源默认混合。WinRT Contracts 不应与 SDK 单体 Windows.winmd 叠加。
+下载缓存放在 `tmp/deps/`；提取的文件、ZIP 包和 SHA-256 校验清单放在 `artifacts/`。
 
-| 来源 | 固定版本 | 记录 |
-| --- | --- | --- |
-| Win32 | 71.0.37-preview | [win32.json](sources/win32.json) |
-| WDK | 0.13.25-experimental | [wdk.json](sources/wdk.json)，上游仅提供实验版本 |
-| WinRT | Contracts 10.0.28000.2957 | [winrt.json](sources/winrt.json)，96 个独立 WinMD |
-| WinUI | Windows App SDK 2.6.5 | [组件](sources/winui.json)、[Base](sources/winui-base.json)、[Foundation](sources/winui-foundation.json)、[InteractiveExperiences](sources/winui-interactive.json) |
-| Win2D | 1.4.0 | [win2d.json](sources/win2d.json)，包内两个 WinMD 字节相同，仅保留一个 |
-| UCRT | SDK 10.0.26100.0 / MSVC 14.51.36231 | [ucrt.json](sources/ucrt.json)，由源码生成，不是下载包 |
+只下载某个包时，使用 `python scripts/prepare-metadata.py --source win32`。
+准备 WinUI 需要同时选择 `winui`、`winui-base`、`winui-foundation` 和 `winui-interactive`（重复传入 `--source`）。验证和打包脚本需要全部六类来源准备齐全。
 
-各记录包含包 URL、包与所选成员 SHA-256；包内 nuspec 和许可文件随成品保留。Contracts 和 Win2D 包未包含许可文件，许可 URL 和依赖约束见其 nuspec。WinUI 的 InteractiveExperiences 使用 10.0.17763.0 元数据变体，不混用另一变体。依赖约束不是对运行时兼容性的保证。
+## 元数据来源
+
+版本、下载地址和文件哈希见下表；包的依赖和许可说明随提取文件保留。
+
+| 来源 | 清单 |
+| --- | --- |
+| Win32 | [win32.json](sources/win32.json) |
+| WDK | [wdk.json](sources/wdk.json) |
+| WinRT Contracts | [winrt.json](sources/winrt.json) |
+| WinUI | [WinUI](sources/winui.json)、[Base](sources/winui-base.json)、[Foundation](sources/winui-foundation.json)、[InteractiveExperiences](sources/winui-interactive.json) |
+| Win2D | [win2d.json](sources/win2d.json) |
+| UCRT（从 SDK／MSVC 头文件生成） | [ucrt.json](sources/ucrt.json) |
+
+查询涉及其他来源的类型时，需要一起加载对应元数据：WDK 引用 Win32，WinUI 引用 WinRT，Win2D 引用 WinUI 和 WinRT。验证脚本也按这些组合加载文件。
+
+同一组件只加载一套版本或架构变体；WinRT Contracts 和 SDK 单体 `Windows.winmd` 二选一。
 
 ## UCRT
 
-生成器位于 [`tools/ucrt-winmd/`](tools/ucrt-winmd/README.md)，保留独立 Cargo workspace、许可证、来源及严格布局验证。
+生成器用法见 [`tools/ucrt-winmd/`](tools/ucrt-winmd/README.md)。构建时加上 `-WinlexPath <CLI绝对路径>`，可额外检查 Winlex 查询和布局结果。
 
-```powershell
-pwsh tools/ucrt-winmd/build.ps1 -Check
-```
+`--ucrt-output` 导入通过 `-Check` 的生成结果，并更新 `sources/ucrt.json`。随附的 `manifest.json` 含本机路径，分享前请检查。
 
-可用 `-WinlexPath <CLI绝对路径>` 显式启用集成验证；不要求安装 Winlex，也不依赖同级目录布局。
+## 许可与发布
 
-`--ucrt-output` 校验合并文件与生成器 manifest、一致的三架构覆盖及 `-Check` 结果后，导入 WinMD、原始 manifest 和工具许可证，并刷新 `sources/ucrt.json` 的生成版本及哈希。新环境生成的 manifest 不必与其他机器字节相同。原始 manifest 含本机路径，分享前须审查；不得将本机 SDK 头文件打包。
-
-WDK 的 nuspec 声明 Win32Metadata 63.0.31-preview 依赖，此集合选择固定的较新 71.0.37-preview 并执行查询验证，不宣称不同版本完全等价。保留的 nuspec 还包含运行时和构建依赖；此集合仅准备元数据，不安装组件运行时，也不保证所有外部类型引用都可解析。
-
-## 分发边界
-
-工具源码采用根目录 GPL-3.0-only 许可证；输入包、微软头文件及生成元数据的授权独立于工具源码。来源记录与哈希不代表已获公开再分发许可，公开上传成品前需确认对应条款。
+工具源码采用 [GPL-3.0-only](LICENSE)。发布前见 [UPLOAD.md](UPLOAD.md)。

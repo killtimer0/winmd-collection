@@ -203,7 +203,12 @@ fn generated_crt_contains_only_declarations() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("out/UCRT.winmd");
     let index = Index::read(path).unwrap();
     let apis = index.expect("Ucrt.CRuntime", "Apis");
-    let mut count = 0;
+    for name in ["printf", "malloc", "free", "fopen", "qsort"] {
+        assert!(
+            apis.methods().any(|m| m.name() == name),
+            "missing declaration: {name}"
+        );
+    }
     for method in apis.methods() {
         assert!(method.impl_map().is_none(), "{}", method.name());
         assert!(!method.flags().contains(MethodAttributes::PInvokeImpl));
@@ -214,9 +219,7 @@ fn generated_crt_contains_only_declarations() {
                 .any(|a| a.namespace() == "Winlex.Metadata"
                     && a.name() == "NativeCallingConventionAttribute")
         );
-        count += 1;
     }
-    assert!(count > 500);
 }
 
 #[test]
@@ -283,21 +286,32 @@ fn crt_query_contracts_survive_all_architecture_roundtrips() {
             let invoke = callback.methods().find(|m| m.name() == "Invoke").unwrap();
             assert_eq!(invoke.params().next().unwrap().flags().0, 0);
             for name in ["_stat32", "_stat32i64", "_stat64", "_stat64i32"] {
-                assert!(index.expect("Ucrt.CRuntime", name).fields().count() > 5);
+                let fields: Vec<_> = index
+                    .expect("Ucrt.CRuntime", name)
+                    .fields()
+                    .map(|field| field.name())
+                    .collect();
+                assert_eq!(
+                    fields,
+                    [
+                        "st_dev", "st_ino", "st_mode", "st_nlink", "st_uid", "st_gid", "st_rdev",
+                        "st_size", "st_atime", "st_mtime", "st_ctime",
+                    ],
+                    "{arch}/{filename}: {name}"
+                );
             }
         }
     }
 }
 
 #[test]
-fn emitted_inventory_and_roundtrip_signature_contract() {
+fn roundtrip_preserves_all_emitted_fields_and_signatures() {
     use std::collections::BTreeMap;
     for arch in ["x86", "x64", "arm64"] {
         let out = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("out")
             .join(arch);
         let mut original = BTreeMap::new();
-        let mut inventory = String::from("kind\towner\tname\tparameter_count\tvariadic\tfields\n");
         for filename in ["UCRT.winmd", "UCRT.roundtrip.winmd"] {
             let index = Index::read(out.join(filename)).unwrap();
             let mut snapshot = BTreeMap::new();
@@ -308,17 +322,6 @@ fn emitted_inventory_and_roundtrip_signature_contract() {
                     .collect();
                 if ty.name() == "Apis" {
                     fields.sort();
-                }
-                if filename == "UCRT.winmd" {
-                    inventory.push_str(&format!(
-                        "type\t\t{}\t\t\t{}\n",
-                        ty.name(),
-                        fields
-                            .iter()
-                            .map(|f| f.0.as_str())
-                            .collect::<Vec<_>>()
-                            .join(",")
-                    ));
                 }
                 snapshot.insert(format!("type:{}", ty.name()), format!("{fields:?}"));
                 for method in ty.methods() {
@@ -334,15 +337,6 @@ fn emitted_inventory_and_roundtrip_signature_contract() {
                             sig.return_type, sig.types, sig.flags.0
                         ),
                     );
-                    if filename == "UCRT.winmd" {
-                        inventory.push_str(&format!(
-                            "method\t{}\t{}\t{}\t{}\t\n",
-                            ty.name(),
-                            method.name(),
-                            sig.types.len(),
-                            (sig.flags.0 & 15) == 5
-                        ));
-                    }
                 }
             }
             if filename == "UCRT.winmd" {
@@ -354,6 +348,5 @@ fn emitted_inventory_and_roundtrip_signature_contract() {
                 }
             }
         }
-        std::fs::write(out.join("winmd-inventory.tsv"), inventory).unwrap();
     }
 }

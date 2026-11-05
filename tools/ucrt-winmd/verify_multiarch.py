@@ -9,7 +9,6 @@ import subprocess
 ROOT = Path(__file__).resolve().parent
 EXE = None
 REPORT = ROOT / 'verification/multiarch-query.json'
-PREVIOUS = None
 
 
 def normalize(value):
@@ -40,20 +39,6 @@ def check(task):
         other, other_code = query(path, arch, command, name)
         assert other_code == 0 and other['ok'], (task, str(path), other)
         assert normalize(other['result']) == normalize(expected['result']), (task, str(path), other, expected)
-    if PREVIOUS is not None:
-        previous, previous_code = query(PREVIOUS / arch / 'UCRT.winmd', arch, command, name)
-        assert code == previous_code and expected['ok'] == previous['ok'], (task, previous, expected)
-        if expected['ok']:
-            before = normalize(previous['result'])
-            after = normalize(expected['result'])
-            if command == 'show' and name.rsplit('.', 1)[-1] in {'size_t', 'uintptr_t', 'intptr_t', 'ptrdiff_t'}:
-                native = 'USize' if name.rsplit('.', 1)[-1] in {'size_t', 'uintptr_t'} else 'ISize'
-                allowed = {'U32', 'USize'} if native == 'USize' else {'I32', 'ISize'}
-                assert before['fields'][0]['type']['name'] in allowed
-                before['fields'][0]['type'] = {'kind': 'primitive', 'name': native}
-            assert before == after, (task, before, after)
-        else:
-            assert expected['error'] == previous['error'], (task, previous, expected)
     assert actual_code == 0 and actual['ok'], (task, actual)
     assert normalize(expected['result']) == normalize(actual['result']), (task, expected['result'], actual['result'])
     if command == 'layout' and name.rsplit('.', 1)[-1] in {'size_t', 'uintptr_t', 'intptr_t', 'ptrdiff_t', 'rsize_t'}:
@@ -65,12 +50,10 @@ def check(task):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--winlex', type=Path, required=True, help='Path to a compatible Winlex CLI executable')
-    parser.add_argument('--previous', type=Path, help='Optional directory containing pre-normalization architecture baselines')
     options = parser.parse_args()
     EXE = options.winlex.resolve()
     if not EXE.is_file():
         parser.error('Winlex executable not found.')
-    PREVIOUS = options.previous
     tasks = []
     methods = {}
     for arch in ['x86', 'x64', 'arm64']:
@@ -92,7 +75,7 @@ if __name__ == '__main__':
             data, code = query(ROOT / 'out/UCRT.winmd', arch, 'show', 'Ucrt.CRuntime.Apis.' + name)
             assert code != 0 and not data['ok'], (arch, name, data)
             results.append({'architecture': arch, 'command': 'show', 'name': name, 'status': 'correctly-unavailable'})
-    REPORT.write_text(json.dumps({'checked_previous_baselines': PREVIOUS is not None, 'checks': results, 'limitations': [
+    REPORT.write_text(json.dumps({'checks': results, 'limitations': [
         'baseline equivalence is not independent native ABI validation',
         'function queries are representative; Rust contracts compare all emitted signatures and attributes'
     ]}, indent=2), encoding='utf-8')

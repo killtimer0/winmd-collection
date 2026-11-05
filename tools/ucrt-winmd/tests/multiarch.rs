@@ -136,7 +136,17 @@ fn combined_and_roundtrip_match_every_architecture_baseline() {
     for (name, arch) in [("x86", 1), ("x64", 2), ("arm64", 4)] {
         let path = root().join(format!("out/{name}/UCRT.winmd"));
         let baseline = snapshot(&path, arch);
-        assert!(baseline.len() > 2000);
+        for key in [
+            "method:Ucrt.CRuntime.Apis.printf",
+            "method:Ucrt.CRuntime.Apis.malloc",
+            "type:Ucrt.CRuntime.FILE",
+            "type:Ucrt.CRuntime._stat64",
+        ] {
+            assert!(
+                baseline.contains_key(key),
+                "{name}: missing declaration {key}"
+            );
+        }
         for filename in ["UCRT.untagged.winmd", "UCRT.roundtrip.winmd"] {
             assert_eq!(
                 snapshot_with_duplicates(

@@ -65,6 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .output(out.join("UCRT.winmd"))
         .merge()?;
     roundtrip(&out)?;
+    write_inventory(&out)?;
     std::fs::write(
         out.join("generation.json"),
         serde_json::to_vec_pretty(&serde_json::json!({
@@ -95,9 +96,75 @@ fn roundtrip(out: &std::path::Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn write_inventory(out: &std::path::Path) -> Result<(), Box<dyn Error>> {
+    let index = windows_metadata::reader::Index::read(out.join("UCRT.winmd"))
+        .ok_or("failed to read UCRT metadata for inventory")?;
+    let mut inventory = String::from("kind\towner\tname\tparameter_count\tvariadic\tfields\n");
+    for ty in index.types().filter(|t| t.namespace() == "Ucrt.CRuntime") {
+        let mut fields: Vec<_> = ty.fields().map(|f| f.name()).collect();
+        if ty.name() == "Apis" {
+            fields.sort();
+        }
+        inventory.push_str(&format!(
+            "type\t\t{}\t\t\t{}\n",
+            ty.name(),
+            fields.join(",")
+        ));
+        for method in ty.methods() {
+            let sig = method.signature(&[]);
+            inventory.push_str(&format!(
+                "method\t{}\t{}\t{}\t{}\t\n",
+                ty.name(),
+                method.name(),
+                sig.types.len(),
+                (sig.flags.0 & 15) == 5
+            ));
+        }
+    }
+    std::fs::write(out.join("winmd-inventory.tsv"), inventory)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn inventory_preserves_record_field_order_and_function_shape() {
+        let out = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("verification/inventory-contract");
+        std::fs::create_dir_all(&out).unwrap();
+        windows_rdl::reader()
+            .input_text(
+                r#"#[win32] mod Ucrt { mod CRuntime {
+                    struct Record { z: i32, a: u8 }
+                    #[declaration] extern "C" fn print(format: *const i8, ...) -> i32;
+                    #[declaration] extern "C" fn release(value: *mut u8);
+                }}"#,
+            )
+            .input("declarations.rdl")
+            .reference_default()
+            .output(out.join("UCRT.winmd"))
+            .write()
+            .unwrap();
+        write_inventory(&out).unwrap();
+        let inventory = std::fs::read_to_string(out.join("winmd-inventory.tsv")).unwrap();
+        let mut rows: Vec<_> = inventory.lines().collect();
+        assert_eq!(
+            rows.remove(0),
+            "kind\towner\tname\tparameter_count\tvariadic\tfields"
+        );
+        rows.sort();
+        assert_eq!(
+            rows,
+            vec![
+                "method\tApis\tprint\t1\ttrue\t",
+                "method\tApis\trelease\t1\tfalse\t",
+                "type\t\tApis\t\t\t",
+                "type\t\tRecord\t\t\tz,a",
+            ]
+        );
+    }
 
     #[test]
     fn toolchain_args_preserve_unicode_spaces_and_unc_paths() {
