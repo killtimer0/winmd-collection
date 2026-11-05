@@ -3,11 +3,13 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 import zipfile
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 spec = importlib.util.spec_from_file_location("prepare", Path(__file__).resolve().parents[1] / "scripts/prepare-metadata.py")
 prepare = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(prepare)
@@ -22,7 +24,7 @@ class PreparationTests(unittest.TestCase):
             (root / "sources").mkdir()
             (root / "tools/ucrt-winmd").mkdir(parents=True)
             (root / "tools/ucrt-winmd/LICENSE").write_bytes(b"license")
-            (root / "sources/ucrt.json").write_text(json.dumps({"kind": "generated", "files": dict.fromkeys(("UCRT.winmd", "manifest.json", "LICENSE"), "0" * 64)}))
+            (root / "sources/ucrt.json").write_text(json.dumps({"kind": "generated", "files": dict.fromkeys(("UCRT.winmd", "licenses/ucrt/generator-LICENSE"), "0" * 64)}))
             data = b"generated metadata"
             (output / "UCRT.winmd").write_bytes(data)
             manifest = {"artifacts": [{"path": "out/UCRT.winmd", "sha256": hashlib.sha256(data).hexdigest()}],
@@ -36,9 +38,12 @@ class PreparationTests(unittest.TestCase):
                 self.assertEqual(record["files"]["UCRT.winmd"], hashlib.sha256(data).hexdigest())
                 self.assertEqual(record["generator_revision"], "revision")
                 self.assertEqual(record["sdk_version"], "10.0.26100.0")
+                self.assertEqual(record["generation_manifest_sha256"], hashlib.sha256((output / "manifest.json").read_bytes()).hexdigest())
+                self.assertEqual((root / "artifacts/licenses/ucrt/generator-LICENSE").read_bytes(), b"license")
+                self.assertFalse((root / "artifacts/manifest.json").exists())
                 (output / "UCRT.winmd").write_bytes(b"corrupt")
                 with self.assertRaises(ValueError): prepare.import_ucrt(output)
-                self.assertEqual((root / "artifacts/ucrt/UCRT.winmd").read_bytes(), data)
+                self.assertEqual((root / "artifacts/UCRT.winmd").read_bytes(), data)
 
     def test_selected_members_verified_before_writing(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -52,10 +57,10 @@ class PreparationTests(unittest.TestCase):
                 {"member": "b", "file": "b", "sha256": "0" * 64}]}
             with patch.object(prepare, "ROOT", root), patch.object(prepare, "download", return_value=archive):
                 with self.assertRaises(ValueError): prepare.prepare("sample", source)
-                self.assertFalse((root / "artifacts/sample").exists())
+                self.assertFalse((root / "artifacts").exists())
                 source["members"][1]["sha256"] = hashlib.sha256(b"second").hexdigest()
                 prepare.prepare("sample", source)
-                self.assertEqual((root / "artifacts/sample/路径/a").read_bytes(), b"first")
+                self.assertEqual((root / "artifacts/路径/a").read_bytes(), b"first")
                 for bad in ("../escape", "C:/escape", "/escape", "路径/a"):
                     source["members"][1]["file"] = bad
                     with self.assertRaises(ValueError): prepare.prepare("sample", source)
@@ -81,7 +86,7 @@ class PreparationTests(unittest.TestCase):
             source = {"package": "p", "version": "1", "members": [{"member": "a", "file": "a", "sha256": sha}], "duplicate_member": {"member": "b", "sha256": sha}}
             with patch.object(prepare, "ROOT", root), patch.object(prepare, "download", return_value=archive):
                 with self.assertRaises(ValueError): prepare.prepare("sample", source)
-                self.assertFalse((root / "artifacts/sample").exists())
+                self.assertFalse((root / "artifacts").exists())
 
 
 class SDKPreparationTests(unittest.TestCase):
@@ -139,15 +144,15 @@ class SDKPreparationTests(unittest.TestCase):
                 "sdk_member": "UnionMetadata/10.0.10/Windows.winmd",
                 "files": {"Windows.winmd": hashlib.sha256(data).hexdigest()},
             })
-            self.assertEqual((self.root / "artifacts/winrt/Windows.winmd").read_bytes(), data)
-            self.assertEqual(json.loads((self.root / "artifacts/winrt/sources/winrt.json").read_text()), record)
+            self.assertEqual((self.root / "artifacts/Windows.winmd").read_bytes(), data)
+            self.assertFalse((self.root / "artifacts/sources").exists())
 
     def test_missing_sdk_leaves_source_record_unchanged(self):
         record = self.record.read_bytes()
         with self.assertRaises(prepare.subprocess.CalledProcessError):
             prepare.import_winrt()
         self.assertEqual(self.record.read_bytes(), record)
-        self.assertFalse((self.root / "artifacts/winrt").exists())
+        self.assertFalse((self.root / "artifacts").exists())
 
 
 if __name__ == "__main__":
