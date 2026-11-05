@@ -2,6 +2,62 @@ use std::path::PathBuf;
 use std::process::Command;
 
 #[test]
+fn crt_parameter_aliases_survive_metadata_roundtrip() {
+    use windows_metadata::{Type, reader::Index};
+
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("verification/crt-parameter-aliases");
+    for target in [
+        "i686-pc-windows-msvc",
+        "x86_64-pc-windows-msvc",
+        "aarch64-pc-windows-msvc",
+    ] {
+        let dir = root.join(target);
+        std::fs::create_dir_all(&dir).unwrap();
+        windows_clang::clang()
+            .input_text(
+                "typedef char *va_list; int consume(va_list args, char *raw, va_list *indirect);",
+            )
+            .args(["-x", "c", &format!("--target={target}")])
+            .namespace("Probe")
+            .library("probe.dll")
+            .output(dir.join("input.rdl"))
+            .write()
+            .unwrap();
+        for (input, output) in [
+            ("input.rdl", "first.winmd"),
+            ("roundtrip.rdl", "second.winmd"),
+        ] {
+            windows_rdl::reader()
+                .input(dir.join(input))
+                .output(dir.join(output))
+                .write()
+                .unwrap();
+            let index = Index::read(dir.join(output)).unwrap();
+            let method = index
+                .expect("Probe", "Apis")
+                .methods()
+                .find(|method| method.name() == "consume")
+                .unwrap();
+            let alias = Type::value_named("Probe", "va_list");
+            assert_eq!(
+                method.signature(&[]).types,
+                vec![
+                    alias.clone(),
+                    Type::PtrMut(Box::new(Type::I8), 1),
+                    Type::PtrMut(Box::new(alias), 1),
+                ],
+                "{target}: {output}"
+            );
+            windows_rdl::writer()
+                .input(dir.join(output))
+                .output(dir.join("roundtrip.rdl"))
+                .write()
+                .unwrap();
+        }
+    }
+}
+
+#[test]
 fn selected_includes_take_precedence_over_compiler_defaults() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let config: serde_json::Value =

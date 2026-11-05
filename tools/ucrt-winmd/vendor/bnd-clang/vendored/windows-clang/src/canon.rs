@@ -490,6 +490,9 @@ pub(crate) fn param_metadata_type(
     annotation: &ParamAnnotation,
     parser: &mut Parser<'_>,
 ) -> metadata::Type {
+    if cursor_ty.kind() == CXType_Elaborated {
+        return param_metadata_type(&cursor_ty.underlying_type(), annotation, parser);
+    }
     if cursor_ty.kind() == CXType_Typedef && preserve_crt_typedef(&cursor_ty.ty().name()) {
         return cursor_ty.to_type(parser);
     }

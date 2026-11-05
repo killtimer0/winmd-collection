@@ -13,6 +13,8 @@ Changes in `vendored/windows-clang/src/`:
 
 - `canon.rs`, `typedef.rs`: preserve selected CRT semantic aliases at definition
   and reference sites instead of collapsing them to ABI-equivalent primitives.
+  Unwrap elaborated parameter types before applying alias rules so older Clang
+  versions retain pointer aliases such as `va_list` too.
   The backing definitions of `size_t`, `uintptr_t`, `intptr_t` and `ptrdiff_t`
   use native-sized integers on all architectures, retaining named references and
   the `rsize_t` to `size_t` alias chain.
