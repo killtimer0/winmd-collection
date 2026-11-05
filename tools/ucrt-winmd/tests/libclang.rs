@@ -1,4 +1,43 @@
 use std::path::PathBuf;
+use std::process::Command;
+
+#[test]
+fn selected_includes_take_precedence_over_compiler_defaults() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let config: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root.join("out/toolchain.json")).unwrap()).unwrap();
+    let args: Vec<String> = serde_json::from_value(config["clang_args"].clone()).unwrap();
+    let dir = root.join("verification/include-search/路径 with spaces");
+    let selected = dir.join("selected");
+    let resource = dir.join("resource");
+    std::fs::create_dir_all(&selected).unwrap();
+    std::fs::create_dir_all(resource.join("include")).unwrap();
+    std::fs::write(selected.join("selection.h"), "int selected_header;\n").unwrap();
+    std::fs::write(
+        resource.join("include/selection.h"),
+        "#error compiler defaults displaced the selected include directory\n",
+    )
+    .unwrap();
+    let source = dir.join("probe.c");
+    std::fs::write(&source, "#include <selection.h>\n").unwrap();
+    let output = Command::new(config["clang_path"].as_str().unwrap())
+        .args(args)
+        .arg("--target=i686-pc-windows-msvc")
+        .arg("-I")
+        .arg(&selected)
+        .arg("-resource-dir")
+        .arg(&resource)
+        .arg("-fsyntax-only")
+        .arg(&source)
+        .env("INCLUDE", &selected)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
 
 #[test]
 fn version_queries_and_generation_share_a_runtime_lifetime() {

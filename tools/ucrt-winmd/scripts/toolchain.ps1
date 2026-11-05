@@ -78,7 +78,7 @@ function Get-CrtToolchain {
         libclang_sha256 = (Get-FileHash -LiteralPath (Join-Path $libclang 'libclang.dll') -Algorithm SHA256).Hash.ToLowerInvariant()
         rustc_version = $rustVersion
         cargo_version = $cargoVersion
-        clang_args = @('-x', 'c', '-std=c17', '-fno-builtin', '-D_NO_CRT_STDIO_INLINE=1', "-I$(Join-Path $sdk 'ucrt')", "-I$(Join-Path $sdk 'shared')", "-I$msvc")
+        clang_args = @('-x', 'c', '-std=c17', '-fno-builtin', '-nostdlibinc', '-D_NO_CRT_STDIO_INLINE=1', "-I$(Join-Path $sdk 'ucrt')", "-I$(Join-Path $sdk 'shared')", "-I$msvc")
     }
 }
 
