@@ -90,6 +90,15 @@ jobs:
         shell: bash
         run: |
           mapfile -t attachments < attachments.txt
-          options=(--draft --verify-tag --title "$TAG" --notes '来源、依赖和许可见 SOURCES.md 与 licenses.zip。')
+          cat > release-notes.md <<'EOF'
+          供 Winlex 离线查询使用的 Windows 元数据集合，涵盖 Win32、WDK、WinRT、UCRT、Windows App SDK、WebView2 和 Win2D。
+
+          ### 下载
+          - 按需下载下方独立的 `.winmd` 文件。
+          - 来源、版本及依赖关系见 `SOURCES.md`。
+          - 许可证见 `licenses.zip`，文件校验值见 `SHA256SUMS`。
+          - GitHub 自动提供的 Source code 压缩包不包含构建产物。
+          EOF
+          options=(--draft --verify-tag --title "$TAG" --notes-file release-notes.md)
           if [[ "$TAG" == *-* ]]; then options+=(--prerelease); fi
           gh release create "$TAG" "${options[@]}" "${attachments[@]}"
