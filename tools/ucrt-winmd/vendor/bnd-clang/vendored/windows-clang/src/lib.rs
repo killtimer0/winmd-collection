@@ -968,7 +968,7 @@ impl Clang {
             exclude_symbols: &self.exclude_symbols,
         };
         let rdl = self.parse_and_emit(&reference, std::slice::from_ref(&spec))?;
-        write_to_file(&self.output, formatter::format(&rdl[0]))?;
+        write_to_file(&self.output, formatter::format(&rdl[0])?)?;
         Ok(())
     }
 
@@ -981,7 +981,7 @@ impl Clang {
             let leaf = stem.to_lowercase();
             write_to_file(
                 self.output.join(format!("{leaf}.rdl")),
-                formatter::format(&rdl),
+                formatter::format(&rdl)?,
             )?;
         }
         Ok(())
@@ -1693,12 +1693,13 @@ fn expand_header_inputs<P: AsRef<Path>>(inputs: &[P]) -> Result<Vec<PathBuf>, Er
         if path.is_dir() {
             let previous_len = paths.len();
 
-            for entry_path in path
+            for entry in path
                 .read_dir()
                 .map_err(|_| Error::new("failed to read directory", &display, 0, 0))?
-                .flatten()
-                .map(|entry| entry.path())
             {
+                let entry_path = entry
+                    .map_err(|error| Error::new(&error.to_string(), &display, 0, 0))?
+                    .path();
                 if entry_path.is_file()
                     && entry_path.extension().is_some_and(|extension| {
                         HEADER_EXTENSIONS

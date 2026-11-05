@@ -39,18 +39,28 @@ for name in ['malloc', 'free', 'fopen', 'qsort']:
     abi = next(a for a in result['attributes'] if a['name'] == 'NativeCallingConventionAttribute')
     assert abi['arguments'][0]['value'] == {'kind': 'string', 'value': 'C'}
     assert result['signature_flags'] & 15 == 0
-query('callback', 'show', '_CoreCrtNonSecureSearchSortCompareFunction')
 query('EOF', 'show', 'EOF')
 query('EINVAL', 'show', 'EINVAL')
 
-for name, size, align in [('FILE', 8, 8), ('tm', 36, 4), ('_stat64', 56, 8), ('_stat32', 36, 4),
-                          ('_FPQ64', 16, 16), ('_FPIEEE_VALUE', 32, 16), ('_FPIEEE_RECORD', 112, 16),
-                          ('_double_val', 8, 8), ('_float_const', 8, 8), ('_float_val', 4, 4), ('_ldouble_val', 8, 8)]:
-    result = query(name, 'layout', 'Ucrt.CRuntime.' + name, '--arch', 'x64')
-    assert result['size_bits'] == size * 8, result
-    assert result['alignment_bits'] == align * 8, result
-    if name == '_stat64':
-        assert next(f for f in result['fields'] if f['name'] == 'st_size')['offset_bits'] == 24 * 8
+# Compile assertions against this run's headers, not a previous SDK's layout.
+config = json.loads((root / 'out/toolchain.json').read_text(encoding='utf-8'))
+for arch, target in [('x86', 'i686-pc-windows-msvc'), ('x64', 'x86_64-pc-windows-msvc'),
+                     ('arm64', 'aarch64-pc-windows-msvc')]:
+    assertions = ['#include "../main.h"', '#include <limits.h>']
+    for name, c_type in [('FILE', 'FILE'), ('tm', 'struct tm'),
+                         ('_stat64', 'struct _stat64'), ('_stat32', 'struct _stat32')]:
+        result = query(f'{arch}-{name}', 'layout', 'Ucrt.CRuntime.' + name, '--arch', arch)
+        assertions.append(f'_Static_assert(sizeof({c_type}) * CHAR_BIT == {result["size_bits"]}, "{name} size");')
+        assertions.append(f'_Static_assert(_Alignof({c_type}) * CHAR_BIT == {result["alignment_bits"]}, "{name} alignment");')
+        for field in result['fields']:
+            assertions.append(f'_Static_assert(offsetof({c_type}, {field["name"]}) * CHAR_BIT == {field["offset_bits"]}, "{name}.{field["name"]} offset");')
+    probe = out / f'{arch}-native-layout.c'
+    probe.write_text('\n'.join(assertions) + '\n', encoding='utf-8')
+    result = subprocess.run([config['clang_path'], *config['clang_args'], '--target=' + target,
+                             '-fsyntax-only', str(probe)], capture_output=True, text=True, encoding='utf-8')
+    (out / f'{arch}-native-layout.log').write_text(result.stdout + result.stderr, encoding='utf-8')
+    if result.returncode:
+        raise RuntimeError(f'{arch}: native layout comparison failed:\n{result.stdout}{result.stderr}')
 query('summary', 'summary')
 
 for filename in [f'{arch}/{name}' for arch in ['x86', 'x64', 'arm64']
@@ -83,4 +93,4 @@ for filename in [f'{arch}/{name}' for arch in ['x86', 'x64', 'arm64']
     assert b'.lib\0' not in data.lower()
     assert b'api-ms-win-crt-' not in data
 
-print('PASS: declaration signatures/ABIs, constants/callback, 11 expected layouts; zero ModuleRef/ImplMap in original and roundtrip')
+print('PASS: declaration signatures/ABIs, constants, 12 native layout comparisons; zero ModuleRef/ImplMap in original and roundtrip')

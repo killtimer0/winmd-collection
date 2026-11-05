@@ -14,8 +14,13 @@ Based on windows-rdl 0.100.0, with its upstream license retained.
   absent direction flags remain absent on round trips. Declaration mode disables
   type-based direction inference; callbacks receive explicit unspecified markers
   from the local frontend when they have no direction annotation.
+  The writer retains explicit declaration parameter directions rather than
+  relying on the reader's disabled inference.
 - `reader/struct.rs` and `writer/struct.rs`: encode anonymous nested records with
   parent-scoped TypeRefs and retain them as inline records on round trips.
+- `formatter/mod.rs`: return tokenization errors to callers instead of formatting
+  invalid input as empty output. Input enumeration and output cleanup propagate
+  filesystem errors.
 
 This convention is intended for query-only metadata. It is not an upstream format
 extension and does not claim CLR executability. The original library/import mode

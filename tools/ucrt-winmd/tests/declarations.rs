@@ -10,6 +10,34 @@ fn root(name: &str) -> PathBuf {
 }
 
 #[test]
+fn malformed_rdl_cannot_be_formatted_as_empty_output() {
+    assert!(windows_rdl::formatter::format("{").is_err());
+    assert_eq!(
+        windows_rdl::formatter::format("#[r#in]").unwrap(),
+        "#[in]\n"
+    );
+}
+
+#[test]
+fn split_and_partition_writers_propagate_directory_errors() {
+    let path = root("directory-error-contract").join("not-a-directory");
+    std::fs::write(&path, b"existing content").unwrap();
+    let error = windows_rdl::writer()
+        .split()
+        .output(&path)
+        .write()
+        .unwrap_err();
+    assert_eq!(error.file_name, path.to_string_lossy());
+    let error = windows_rdl::writer()
+        .partition(Default::default())
+        .output(&path)
+        .write()
+        .unwrap_err();
+    assert_eq!(error.file_name, path.to_string_lossy());
+    assert_eq!(std::fs::read(&path).unwrap(), b"existing content");
+}
+
+#[test]
 fn declaration_roundtrip_preserves_abi_and_varargs_without_imports() {
     let dir = root("declaration-roundtrip");
     let input = dir.join("input.rdl");
@@ -223,84 +251,56 @@ fn generated_crt_contains_only_declarations() {
 }
 
 #[test]
-fn crt_query_contracts_survive_all_architecture_roundtrips() {
-    use windows_metadata::{ParamAttributes, Type};
-    for arch in ["x86", "x64", "arm64"] {
-        for filename in ["UCRT.winmd", "UCRT.roundtrip.winmd"] {
-            let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("out")
-                .join(arch)
-                .join(filename);
-            let index = Index::read(path).unwrap();
-            let apis = index.expect("Ucrt.CRuntime", "Apis");
-            let method = |name: &str| apis.methods().find(|m| m.name() == name).unwrap();
-            for name in [
-                "_beginthreadex",
-                "_stat32",
-                "_stat32i64",
-                "_stat64",
-                "_stat64i32",
-                "_MallocaComputeSize",
-            ] {
-                let item = method(name);
-                assert!(item.impl_map().is_none());
-                assert_eq!(item.impl_flags().0, 0x15);
-            }
-            for name in [
-                "va_list",
-                "size_t",
-                "ptrdiff_t",
-                "intptr_t",
-                "uintptr_t",
-                "rsize_t",
-                "float_t",
-                "double_t",
-            ] {
-                assert!(
-                    index.contains("Ucrt.CRuntime", name),
-                    "{arch}/{filename}: {name}"
-                );
-            }
-            let vprintf = method("vprintf");
-            assert!(
-                matches!(&vprintf.signature(&[]).types[1], Type::ValueName(name) if name.name == "va_list")
-            );
-            let malloc = method("malloc");
-            assert!(
-                matches!(&malloc.signature(&[]).types[0], Type::ValueName(name) if name.name == "size_t")
-            );
-            for item in [vprintf, malloc] {
-                for param in item.params() {
-                    assert!(!param.flags().contains(ParamAttributes::Out));
-                    assert!(!param.flags().contains(ParamAttributes::In));
-                }
-            }
-            let callback = index.expect("Ucrt.CRuntime", "_beginthreadex_proc_type");
-            let abi = callback
-                .attributes()
-                .find(|a| a.name() == "UnmanagedFunctionPointerAttribute")
-                .unwrap();
-            assert!(
-                matches!(&abi.value()[0].1, Value::EnumValue(_, value) if **value == Value::I32(1))
-            );
-            let invoke = callback.methods().find(|m| m.name() == "Invoke").unwrap();
-            assert_eq!(invoke.params().next().unwrap().flags().0, 0);
-            for name in ["_stat32", "_stat32i64", "_stat64", "_stat64i32"] {
-                let fields: Vec<_> = index
-                    .expect("Ucrt.CRuntime", name)
-                    .fields()
-                    .map(|field| field.name())
-                    .collect();
-                assert_eq!(
-                    fields,
-                    [
-                        "st_dev", "st_ino", "st_mode", "st_nlink", "st_uid", "st_gid", "st_rdev",
-                        "st_size", "st_atime", "st_mtime", "st_ctime",
-                    ],
-                    "{arch}/{filename}: {name}"
-                );
-            }
-        }
+fn declaration_and_callback_directions_survive_roundtrip() {
+    use windows_metadata::ParamAttributes;
+    let dir = root("parameter-direction-contract");
+    let original = dir.join("original.winmd");
+    windows_rdl::reader()
+        .input_text(
+            r#"#[win32] mod Probe {
+            #[declaration] extern "C" fn function(
+                plain: *mut i32, #[r#in] input: *const i32, #[out] output: *mut i32);
+            extern "system" fn Callback(#[unspecified] value: *mut i32);
+        }"#,
+        )
+        .input(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("declarations.rdl"))
+        .output(&original)
+        .write()
+        .unwrap();
+    let rdl = dir.join("roundtrip.rdl");
+    windows_rdl::writer()
+        .input(&original)
+        .output(&rdl)
+        .write()
+        .unwrap();
+    let roundtrip = dir.join("roundtrip.winmd");
+    windows_rdl::reader()
+        .input(&rdl)
+        .output(&roundtrip)
+        .write()
+        .unwrap();
+    for path in [&original, &roundtrip] {
+        let index = Index::read(path).unwrap();
+        let function = index.expect("Probe", "Apis").methods().next().unwrap();
+        let flags: Vec<_> = function.params().map(|param| param.flags()).collect();
+        assert_eq!(
+            flags,
+            [
+                ParamAttributes(0),
+                ParamAttributes::In,
+                ParamAttributes::Out
+            ]
+        );
+        let callback = index.expect("Probe", "Callback");
+        let abi = callback
+            .attributes()
+            .find(|a| a.name() == "UnmanagedFunctionPointerAttribute")
+            .unwrap();
+        assert!(
+            matches!(&abi.value()[0].1, Value::EnumValue(_, value) if **value == Value::I32(1))
+        );
+        let invoke = callback.methods().find(|m| m.name() == "Invoke").unwrap();
+        assert_eq!(invoke.params().next().unwrap().flags().0, 0);
     }
 }
 

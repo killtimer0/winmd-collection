@@ -1,12 +1,16 @@
+use crate::Error;
 use proc_macro2::{Delimiter, Group, Spacing, TokenStream, TokenTree};
 
 /// Formats RDL source into canonical indented form.
-pub fn format(input: &str) -> String {
-    let stream: TokenStream = input.parse().unwrap_or_default();
+pub fn format(input: &str) -> Result<String, Error> {
+    let stream: TokenStream = input.parse().map_err(|error: proc_macro2::LexError| {
+        let start = error.span().start();
+        Error::new(&error.to_string(), "", start.line, start.column)
+    })?;
     let tokens: Vec<TokenTree> = stream.into_iter().collect();
     let mut output = String::new();
     format_seq(&tokens, &mut output, 0, false);
-    output
+    Ok(output)
 }
 
 fn format_seq(tokens: &[TokenTree], output: &mut String, indent: usize, inline: bool) {
@@ -201,6 +205,11 @@ mod tests {
 
     #[test]
     fn input_direction_uses_rdl_spelling() {
-        assert_eq!(format("#[r#in]"), "#[in]\n");
+        assert_eq!(format("#[r#in]").unwrap(), "#[in]\n");
+    }
+
+    #[test]
+    fn malformed_tokens_return_an_error() {
+        assert!(format("{").is_err());
     }
 }

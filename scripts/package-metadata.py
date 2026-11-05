@@ -46,7 +46,7 @@ def collect(root):
         name = record.get("output", path.stem)
         if name not in groups:
             raise ValueError(f"Unknown artifact group: {name}")
-        if record.get("kind") == "generated":
+        if record.get("kind") in ("generated", "sdk"):
             for relative, expected in record["files"].items():
                 add(name, relative, expected)
         else:

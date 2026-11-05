@@ -1,3 +1,5 @@
+param([string]$SdkInclude)
+
 function Resolve-CrtExecutable([string]$Name) {
     $command = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $command) { throw "Executable not found: $Name. Install it or specify an explicit path." }
@@ -27,6 +29,14 @@ function Find-CrtVersionedInclude([string]$Root, [string]$Suffix, [string]$Heade
     return $null
 }
 
+function Get-CrtSdkInclude([string]$IncludePath) {
+    if (-not $IncludePath) {
+        $kits = if ($env:WindowsSdkDir) { $env:WindowsSdkDir } else { Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10' }
+        $IncludePath = Find-CrtVersionedInclude (Join-Path $kits 'Include') '' 'ucrt/stdio.h'
+    }
+    return Resolve-CrtInclude $IncludePath @('ucrt/stdio.h', 'shared/sdkddkver.h') 'SdkIncludePath'
+}
+
 function Get-CrtToolchain {
     param([string]$SdkIncludePath, [string]$MsvcIncludePath, [string]$ClangPath, [string]$LibClangPath)
     if (-not $IsWindows) { throw 'This generator currently requires a Windows host.' }
@@ -35,10 +45,6 @@ function Get-CrtToolchain {
     $rustVersion = & $rustc --version
     if ($LASTEXITCODE -ne 0 -or $rustVersion -notmatch '^rustc (\d+\.\d+\.\d+)') { throw 'Cannot determine Rust version.' }
     if ([version]$Matches[1] -lt [version]'1.95.0') { throw 'Rust 1.95+ is required by the local generator dependencies.' }
-    if (-not $SdkIncludePath) {
-        $kits = if ($env:WindowsSdkDir) { $env:WindowsSdkDir } else { Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10' }
-        $SdkIncludePath = Find-CrtVersionedInclude (Join-Path $kits 'Include') '' 'ucrt/stdio.h'
-    }
     if (-not $MsvcIncludePath -and $env:VCToolsInstallDir) { $MsvcIncludePath = Join-Path $env:VCToolsInstallDir 'include' }
     if (-not $MsvcIncludePath) {
         $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
@@ -48,7 +54,7 @@ function Get-CrtToolchain {
             if ($vs) { $MsvcIncludePath = Find-CrtVersionedInclude (Join-Path $vs 'VC/Tools/MSVC') 'include' 'vcruntime.h' }
         }
     }
-    $sdk = Resolve-CrtInclude $SdkIncludePath @('ucrt/stdio.h', 'shared/sdkddkver.h') 'SdkIncludePath'
+    $sdk = Get-CrtSdkInclude $SdkIncludePath
     $msvc = Resolve-CrtInclude $MsvcIncludePath @('vcruntime.h', 'vadefs.h', 'vcruntime_startup.h') 'MsvcIncludePath'
     $clang = Resolve-CrtExecutable $ClangPath
     $clangVersion = & $clang --version
@@ -123,4 +129,9 @@ function Get-CrtSourceFiles([string]$Root) {
     foreach ($path in $paths) {
         Get-ChildItem -LiteralPath (Join-Path $Root $path) -File -Recurse -Force | Sort-Object FullName
     }
+}
+
+if ($MyInvocation.InvocationName -ne '.') {
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+    Get-CrtSdkInclude $SdkInclude
 }

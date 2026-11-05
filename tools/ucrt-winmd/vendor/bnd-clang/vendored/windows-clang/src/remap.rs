@@ -166,7 +166,9 @@ impl HeaderRemap {
     fn routes(&self) -> Result<HashMap<String, String>, Error> {
         let mut rdl_files: Vec<_> = std::fs::read_dir(&self.rdl_dir)
             .map_err(|error| io_error("failed to read RDL directory", &self.rdl_dir, error))?
-            .filter_map(Result::ok)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|error| io_error("failed to read RDL directory entry", &self.rdl_dir, error))?
+            .into_iter()
             .map(|entry| entry.path())
             .filter(|path| path.extension().is_some_and(|extension| extension == "rdl"))
             .collect();

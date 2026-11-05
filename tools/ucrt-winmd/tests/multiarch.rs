@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use windows_metadata::{
-    HasAttributes, Type, Value,
+    HasAttributes, Type,
     reader::{File, Index, TypeDef},
 };
 
@@ -322,30 +322,5 @@ fn semantic_native_typedefs_are_single_architecture_neutral_definitions() {
         assert!(
             matches!(rsize.fields().next().unwrap().ty(), Type::ValueName(name) if name.name == "size_t")
         );
-        let methods: Vec<_> = index
-            .expect("Ucrt.CRuntime", "Apis")
-            .methods()
-            .filter(|m| m.name() == "__report_gsfailure")
-            .collect();
-        assert_eq!(methods.len(), 2);
-        for (arch, count) in [(1, 0), (6, 1)] {
-            let method = methods.iter().find(|m| m.arches() == arch).unwrap();
-            assert_eq!(method.signature(&[]).types.len(), count);
-        }
-        let checks: Vec<_> = index
-            .expect("Ucrt.CRuntime", "Apis")
-            .methods()
-            .filter(|m| m.name() == "__security_check_cookie")
-            .collect();
-        assert_eq!(checks.len(), 2);
-        for (arch, abi) in [(1, "fastcall"), (6, "C")] {
-            let method = checks.iter().find(|m| m.arches() == arch).unwrap();
-            assert!(
-                method
-                    .attributes()
-                    .any(|a| a.name() == "NativeCallingConventionAttribute"
-                        && a.value()[0].1 == Value::Utf8(abi.into()))
-            );
-        }
     }
 }

@@ -1,4 +1,4 @@
-"""Download and verify pinned metadata independently of Winlex."""
+"""Prepare metadata from pinned packages, the Windows SDK and UCRT generation."""
 import argparse
 import hashlib
 import json
@@ -9,6 +9,7 @@ import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+TOOLCHAIN_SCRIPT = ROOT / "tools/ucrt-winmd/scripts/toolchain.ps1"
 
 
 def check(data, expected):
@@ -112,14 +113,56 @@ def import_ucrt(output):
     print("Verified ucrt: 3 generated files and provenance")
 
 
+def find_windows_winmd(sdk_include=None):
+    command = ["pwsh", "-NoProfile", "-File", str(TOOLCHAIN_SCRIPT)]
+    if sdk_include is not None:
+        command.extend(["-SdkInclude", str(sdk_include)])
+    sdk_include = Path(subprocess.check_output(command, text=True, encoding="utf-8").strip())
+    metadata = sdk_include.parent.parent / "UnionMetadata" / sdk_include.name / "Windows.winmd"
+    if not metadata.is_file():
+        raise ValueError(f"Windows SDK metadata not found: {metadata}")
+    return metadata
+
+
+def import_winrt(sdk_include=None):
+    metadata = find_windows_winmd(sdk_include)
+    data = metadata.read_bytes()
+    directory = ROOT / "artifacts/winrt"
+    destination = directory / "Windows.winmd"
+    source = {
+        "kind": "sdk",
+        "sdk_version": metadata.parent.name,
+        "sdk_member": metadata.relative_to(metadata.parents[2]).as_posix(),
+        "files": {"Windows.winmd": hashlib.sha256(data).hexdigest()},
+    }
+    record = json.dumps(source, ensure_ascii=False, indent=2) + "\n"
+    directory.mkdir(parents=True, exist_ok=True)
+    partial = destination.with_suffix(".winmd.partial")
+    try:
+        partial.write_bytes(data)
+        partial.replace(destination)
+    finally:
+        partial.unlink(missing_ok=True)
+    provenance = directory / "sources/winrt.json"
+    provenance.parent.mkdir(parents=True, exist_ok=True)
+    provenance.write_text(record, encoding="utf-8", newline="\n")
+    (ROOT / "sources/winrt.json").write_text(record, encoding="utf-8", newline="\n")
+    print(f"Prepared winrt: Windows.winmd from SDK {source['sdk_version']}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     manifests = {path.stem: path for path in sorted((ROOT / "sources").glob("*.json")) if json.loads(path.read_text(encoding="utf-8")).get("kind") != "generated"}
-    parser.add_argument("--source", choices=manifests, action="append", help="prepare only selected source(s); default: all pinned packages")
+    parser.add_argument("--source", choices=manifests, action="append", help="prepare only selected source(s); default: all packages and SDK WinRT metadata")
     parser.add_argument("--ucrt-output", type=Path, help="also import the pinned UCRT generator output directory")
+    parser.add_argument("--sdk-include", type=Path, help="SDK Include/<version> directory for WinRT; default: newest installed SDK")
     args = parser.parse_args()
     for name in args.source or manifests:
-        prepare(name, json.loads(manifests[name].read_text(encoding="utf-8")))
+        source = json.loads(manifests[name].read_text(encoding="utf-8"))
+        if source.get("kind") == "sdk":
+            import_winrt(args.sdk_include)
+        else:
+            prepare(name, source)
     if args.ucrt_output:
         import_ucrt(args.ucrt_output)
 

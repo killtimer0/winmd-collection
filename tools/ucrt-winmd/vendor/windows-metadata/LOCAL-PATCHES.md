@@ -14,6 +14,7 @@ Changes to reading and merging metadata:
   keys distinguish offset-only variants.
 - Signature decoding retains enclosing TypeRef scopes as qualified nested names,
   allowing rewriters to preserve references through a merge.
+- Input directory enumeration errors are returned to the caller.
 
 These changes support the generator's declaration-only CRT inputs; the merger is
 not a general lossless rewriter for arbitrary ECMA-335 assemblies.

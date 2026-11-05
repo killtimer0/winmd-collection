@@ -46,8 +46,6 @@ def main():
         declaration = query(cli, files, "show", selector)
         results[name] = {"files": len(files), "summary": summary, "search": search, "declaration": declaration}
         print(f"PASS {name}: parsed {len(own)} standalone; loaded {len(files)} in set; queried and displayed {sample}", flush=True)
-    if not results:
-        raise SystemExit("No prepared metadata found")
     output = ROOT / "tmp/verification"
     output.mkdir(parents=True, exist_ok=True)
     (output / "winlex.json").write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")

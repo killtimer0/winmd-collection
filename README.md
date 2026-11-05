@@ -1,10 +1,10 @@
 # winmd-collection
 
-为 Winlex 准备的 Windows 元数据：下载官方包、生成 UCRT 元数据，再验证和打包。各来源单独更新、单独打包。
+为 Winlex 获取和生成 Windows 元数据，并按来源分别验证、打包。
 
 ## 获取与验证
 
-需要 Python 3.10+。生成 UCRT 前，先按[生成器文档](tools/ucrt-winmd/README.md#prerequisites)安装构建工具。
+需要 Python 3.10+ 和 PowerShell 7.2+。生成 UCRT 前，先按[生成器文档](tools/ucrt-winmd/README.md#prerequisites)安装构建工具。
 
 ```powershell
 pwsh tools/ucrt-winmd/build.ps1 -Check
@@ -18,22 +18,24 @@ python scripts/package-metadata.py
 只下载某个包时，使用 `python scripts/prepare-metadata.py --source win32`。
 准备 WinUI 需要同时选择 `winui`、`winui-base`、`winui-foundation` 和 `winui-interactive`（重复传入 `--source`）。验证和打包脚本需要全部六类来源准备齐全。
 
+WinRT 从 SDK 的 `UnionMetadata/<版本>/Windows.winmd` 提取。WinRT 和 UCRT 共用 SDK 发现逻辑，默认选择最新已安装版本。固定版本时，向 UCRT 构建脚本传入 `-SdkIncludePath`，向准备脚本传入 `--sdk-include`，使用同一个 SDK Include 目录。
+
 ## 元数据来源
 
-版本、下载地址和文件哈希见下表；包的依赖和许可说明随提取文件保留。
+来源版本和文件哈希见下表；下载包还记录下载地址，并保留包内的依赖和许可说明。
 
 | 来源 | 清单 |
 | --- | --- |
 | Win32 | [win32.json](sources/win32.json) |
 | WDK | [wdk.json](sources/wdk.json) |
-| WinRT Contracts | [winrt.json](sources/winrt.json) |
+| WinRT（SDK 的 `Windows.winmd`） | [winrt.json](sources/winrt.json) |
 | WinUI | [WinUI](sources/winui.json)、[Base](sources/winui-base.json)、[Foundation](sources/winui-foundation.json)、[InteractiveExperiences](sources/winui-interactive.json) |
 | Win2D | [win2d.json](sources/win2d.json) |
 | UCRT（从 SDK／MSVC 头文件生成） | [ucrt.json](sources/ucrt.json) |
 
 查询涉及其他来源的类型时，需要一起加载对应元数据：WDK 引用 Win32，WinUI 引用 WinRT，Win2D 引用 WinUI 和 WinRT。验证脚本也按这些组合加载文件。
 
-同一组件只加载一套版本或架构变体；WinRT Contracts 和 SDK 单体 `Windows.winmd` 二选一。
+同一组件只加载一套版本或架构变体。
 
 ## UCRT
 

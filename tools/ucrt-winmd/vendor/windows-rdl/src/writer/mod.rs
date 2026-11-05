@@ -153,17 +153,7 @@ impl Writer {
         let rules = resolve_filter(&self.filter, &index);
 
         if let Some(map) = &self.partition {
-            if let Ok(entries) = std::fs::read_dir(&self.output) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path
-                        .extension()
-                        .is_some_and(|ext| ext.eq_ignore_ascii_case("rdl"))
-                    {
-                        let _ = std::fs::remove_file(path);
-                    }
-                }
-            }
+            clear_rdl_output(&self.output)?;
 
             let mut layouts: BTreeMap<String, Layout> = BTreeMap::new();
             for namespace in index.namespaces() {
@@ -194,24 +184,14 @@ impl Writer {
                 path.push(&self.output);
                 path.push(format!("{stem}.rdl"));
 
-                write_to_file(path, formatter::format(&output))?;
+                write_to_file(path, formatter::format(&output)?)?;
             }
 
             return Ok(());
         }
 
         if self.split {
-            if let Ok(entries) = std::fs::read_dir(&self.output) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path
-                        .extension()
-                        .is_some_and(|ext| ext.eq_ignore_ascii_case("rdl"))
-                    {
-                        let _ = std::fs::remove_file(path);
-                    }
-                }
-            }
+            clear_rdl_output(&self.output)?;
 
             for namespace in index.namespaces() {
                 if namespace.is_empty() {
@@ -239,7 +219,7 @@ impl Writer {
                 path.push(&self.output);
                 path.push(format!("{namespace}.rdl"));
 
-                write_to_file(path, formatter::format(&output))?;
+                write_to_file(path, formatter::format(&output)?)?;
             }
         } else {
             let mut layout = Layout::new();
@@ -256,11 +236,29 @@ impl Writer {
             }
 
             let output = layout.to_string();
-            write_to_file(&self.output, formatter::format(&output))?;
+            write_to_file(&self.output, formatter::format(&output)?)?;
         }
 
         Ok(())
     }
+}
+
+fn clear_rdl_output(output: &Path) -> Result<(), Error> {
+    let source = output.to_string_lossy();
+    std::fs::create_dir_all(output)
+        .map_err(|error| Error::new(&error.to_string(), &source, 0, 0))?;
+    for entry in std::fs::read_dir(output)
+        .map_err(|error| Error::new(&error.to_string(), &source, 0, 0))?
+    {
+        let path = entry
+            .map_err(|error| Error::new(&error.to_string(), &source, 0, 0))?
+            .path();
+        if path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("rdl")) {
+            std::fs::remove_file(&path)
+                .map_err(|error| Error::new(&error.to_string(), &path.to_string_lossy(), 0, 0))?;
+        }
+    }
+    Ok(())
 }
 
 fn namespace_starts_with(namespace: &str, starts_with: &str) -> bool {
@@ -511,6 +509,9 @@ fn write_params(
     method: &metadata::reader::MethodDef,
     signature_types: Vec<metadata::Type>,
 ) -> Result<Vec<TokenStream>, Error> {
+    let declaration = method.attributes().any(|a| {
+        a.namespace() == "Winlex.Metadata" && a.name() == "NativeCallingConventionAttribute"
+    });
     let params = method
         .params_by_sequence(signature_types.len())
         .map_err(|error| {
@@ -544,12 +545,12 @@ fn write_params(
             };
             let unspecified = direction == metadata::reader::ParamDirection::Unspecified;
             let unspecified_attr = if unspecified { quote! { #[unspecified] } } else { quote! {} };
-            let in_attr = if !unspecified && effective_in && (has_out || is_mutable) {
+            let in_attr = if !unspecified && effective_in && (declaration || has_out || is_mutable) {
                 quote! { #[r#in] }
             } else {
                 quote! {}
             };
-            let out_attr = if has_out && (effective_in || !is_mutable) {
+            let out_attr = if has_out && (declaration || effective_in || !is_mutable) {
                 quote! { #[out] }
             } else {
                 quote! {}

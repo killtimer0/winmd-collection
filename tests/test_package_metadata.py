@@ -65,6 +65,23 @@ class PackagingTests(unittest.TestCase):
         (self.directory / "sources/sample.json").write_text("{}")
         with self.assertRaises(ValueError): package.main()
 
+    def test_sdk_inventory_is_packaged_and_checked_against_recorded_hash(self):
+        self.record = {
+            "kind": "sdk", "sdk_version": "10.0.10",
+            "sdk_member": "UnionMetadata/10.0.10/Windows.winmd",
+            "files": {"data.winmd": hashlib.sha256(b"good").hexdigest()},
+        }
+        self.write_record()
+        package.main()
+        zip_path = self.root / "artifacts/sample.zip"
+        with zipfile.ZipFile(zip_path) as archive:
+            self.assertEqual(archive.read("sample/data.winmd"), b"good")
+            self.assertEqual(json.loads(archive.read("sample/sources/sample.json")), self.record)
+        previous = zip_path.read_bytes()
+        (self.directory / "data.winmd").write_bytes(b"corrupt")
+        with self.assertRaises(ValueError): package.main()
+        self.assertEqual(zip_path.read_bytes(), previous)
+
 
 if __name__ == "__main__":
     unittest.main()

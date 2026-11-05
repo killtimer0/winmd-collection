@@ -328,7 +328,9 @@ fn clear_rdl_dir(rdl_dir: &Path, seed: Option<&Path>) {
 fn collect_rdl_paths(rdl_dir: &Path) -> Vec<PathBuf> {
     let mut paths: Vec<PathBuf> = std::fs::read_dir(rdl_dir)
         .unwrap_or_else(|e| panic!("failed to read `{}`: {e}", rdl_dir.display()))
-        .filter_map(|entry| entry.ok())
+        .map(|entry| {
+            entry.unwrap_or_else(|e| panic!("failed to read `{}`: {e}", rdl_dir.display()))
+        })
         .map(|entry| entry.path())
         .filter(|path| path.extension().is_some_and(|x| x == "rdl"))
         .collect();
@@ -339,12 +341,14 @@ fn collect_rdl_paths(rdl_dir: &Path) -> Vec<PathBuf> {
 /// Count committed partition files, excluding the seed.
 fn count_partitions(rdl_dir: &Path, seed: Option<&Path>) -> usize {
     let seed_name = seed.and_then(Path::file_name);
-    std::fs::read_dir(rdl_dir).map_or(0, |rd| {
-        rd.filter_map(|e| e.ok())
-            .filter(|e| {
-                let path = e.path();
-                path.extension().is_some_and(|x| x == "rdl") && path.file_name() != seed_name
-            })
-            .count()
-    })
+    std::fs::read_dir(rdl_dir)
+        .unwrap_or_else(|e| panic!("failed to read `{}`: {e}", rdl_dir.display()))
+        .map(|entry| {
+            entry.unwrap_or_else(|e| panic!("failed to read `{}`: {e}", rdl_dir.display()))
+        })
+        .filter(|e| {
+            let path = e.path();
+            path.extension().is_some_and(|x| x == "rdl") && path.file_name() != seed_name
+        })
+        .count()
 }

@@ -18,5 +18,7 @@ Changes in `vendored/windows-clang/src/`:
 - `lib.rs`: retain free function definitions as declarations without their bodies.
 - `callback.rs`: mark unannotated parameter directions as unspecified for the
   patched RDL encoder instead of inferring output from mutable pointer shape.
+- RDL formatting and directory enumeration failures stop generation rather than
+  producing empty output or skipping unreadable entries.
 
 These are local query-metadata policies, not upstream binding behavior.

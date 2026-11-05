@@ -239,8 +239,10 @@ fn read_inputs(inputs: &[PathBuf]) -> Result<Vec<reader::File>, Error> {
                 ))
             })?;
 
-            for entry in entries.flatten() {
-                let entry_path = entry.path();
+            for entry in entries {
+                let entry_path = entry
+                    .map_err(|e| Error::new(format!("failed to read directory `{}`: {e}", input.display())))?
+                    .path();
 
                 if entry_path.is_file()
                     && entry_path

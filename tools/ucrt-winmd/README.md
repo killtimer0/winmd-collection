@@ -83,6 +83,8 @@ To check queries and layouts with Winlex, supply a compatible CLI:
 Standalone commands are
 `python verify.py --winlex PATH` and
 `python verify_multiarch.py --winlex PATH`.
+Layout checks compile assertions against the selected headers for all three
+architectures; expected sizes, alignments and field offsets are not SDK snapshots.
 
 ## Metadata conventions and coverage
 

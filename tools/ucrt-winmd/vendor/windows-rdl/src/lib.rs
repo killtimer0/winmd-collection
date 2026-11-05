@@ -176,8 +176,8 @@ pub fn merge_arch_rdl(
     for input in inputs {
         for entry in std::fs::read_dir(&input.rdl_dir)
             .map_err(|e| writer_err!("failed to read `{}`: {e}", input.rdl_dir.display()))?
-            .flatten()
         {
+            let entry = entry.map_err(|e| writer_err!("failed to read `{}`: {e}", input.rdl_dir.display()))?;
             let path = entry.path();
             if path.extension().is_none_or(|x| x != "rdl")
                 || path.file_name() == seed.as_ref().map(|(name, _, _)| name.as_os_str())
@@ -231,12 +231,13 @@ pub fn expand_input_paths<P: AsRef<Path>>(
         if path.is_dir() {
             let prev_total = paths1.len() + paths2.len();
 
-            for entry_path in path
+            for entry in path
                 .read_dir()
                 .map_err(|_| Error::new("failed to read directory", &display, 0, 0))?
-                .flatten()
-                .map(|entry| entry.path())
             {
+                let entry_path = entry
+                    .map_err(|error| Error::new(&error.to_string(), &display, 0, 0))?
+                    .path();
                 if entry_path.is_file() {
                     if entry_path
                         .extension()
