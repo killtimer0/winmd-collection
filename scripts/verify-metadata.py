@@ -1,4 +1,4 @@
-"""Validate prepared metadata using an explicitly selected Winlex CLI."""
+"""Verify metadata integrity, write delivery summaries and optionally query Winlex."""
 import argparse
 import json
 from pathlib import Path
@@ -16,13 +16,7 @@ def query(cli, files, *arguments):
     return data
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--winlex", type=Path, required=True)
-    args = parser.parse_args()
-    cli = args.winlex.resolve(strict=True)
-    sources = read_sources(ROOT)
-    entries, groups = collect(ROOT, sources)
+def verify_queries(cli, groups):
     results = {}
     for name, (sample, dependencies) in SOURCES.items():
         own = sorted(groups[name])
@@ -44,6 +38,16 @@ def main():
     output = ROOT / "tmp/verification"
     output.mkdir(parents=True, exist_ok=True)
     (output / "winlex.json").write_text(json.dumps(results, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--winlex", type=Path, help="also verify queries using this Winlex CLI")
+    args = parser.parse_args()
+    sources = read_sources(ROOT)
+    entries, groups = collect(ROOT, sources)
+    if args.winlex:
+        verify_queries(args.winlex.resolve(strict=True), groups)
     write_summary(ROOT, sources, entries)
     print("Wrote SOURCES.md, licenses/README.md and SHA256SUMS")
 

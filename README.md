@@ -9,13 +9,14 @@
 ```powershell
 pwsh tools/ucrt-winmd/build.ps1 -Check
 python scripts/prepare-metadata.py --ucrt-output tools/ucrt-winmd/out
-python scripts/verify-metadata.py --winlex 'D:/Tools/winlex.exe'
+python scripts/verify-metadata.py
 ```
 
 下载缓存位于 `tmp/deps/`，成品位于 `artifacts/`。目录中的 `SOURCES.md`、`licenses/` 和 `SHA256SUMS` 分别提供来源与依赖说明、许可和文件哈希。
 
 只下载某个包时，使用 `python scripts/prepare-metadata.py --source win32`。
 `--source winui` 准备 Windows App SDK 聚合元数据。验证脚本需要全部来源准备齐全，并生成来源说明和哈希清单。
+向验证脚本传入 `--winlex <CLI路径>`，可追加查询验证。
 
 WinRT 从 SDK 的 `UnionMetadata/<版本>/Windows.winmd` 提取。WinRT 和 UCRT 共用 SDK 发现逻辑，默认选择最新已安装版本。固定版本时，向 UCRT 构建脚本传入 `-SdkIncludePath`，向准备脚本传入 `--sdk-include`，使用同一个 SDK Include 目录。
 

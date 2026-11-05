@@ -1,0 +1,95 @@
+name: Build metadata
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: metadata-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      SDK_VERSION: 10.0.26100.0
+      RUSTUP_TOOLCHAIN: 1.95.0-x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Select build tools
+        run: |
+          rustup toolchain install $env:RUSTUP_TOOLCHAIN --profile minimal --component clippy
+          if ($LASTEXITCODE -ne 0) { throw 'Rust toolchain installation failed.' }
+          $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ($LASTEXITCODE -ne 0 -or -not $vs) { throw 'Visual Studio C++ tools not found.' }
+          $msvc = (Get-Content "$vs/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt" -Raw).Trim()
+          "MSVC_INCLUDE=$vs/VC/Tools/MSVC/$msvc/include" >> $env:GITHUB_ENV
+          "SDK_INCLUDE=${env:ProgramFiles(x86)}/Windows Kits/10/Include/$env:SDK_VERSION" >> $env:GITHUB_ENV
+          "LLVM_BIN=$env:ProgramFiles/LLVM/bin" >> $env:GITHUB_ENV
+      - name: Test preparation scripts
+        run: python -m unittest discover -s tests -v
+      - name: Generate and check UCRT
+        run: |
+          ./tools/ucrt-winmd/build.ps1 -Check -SdkIncludePath $env:SDK_INCLUDE `
+            -MsvcIncludePath $env:MSVC_INCLUDE -ClangPath "$env:LLVM_BIN/clang.exe" -LibClangPath $env:LLVM_BIN
+      - name: Prepare metadata
+        run: python scripts/prepare-metadata.py --sdk-include "$env:SDK_INCLUDE" --ucrt-output tools/ucrt-winmd/out
+      - name: Verify delivery
+        run: python scripts/verify-metadata.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: metadata
+          path: artifacts/
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: metadata
+          path: artifacts
+      - name: Prepare release attachments
+        shell: python
+        run: |
+          from pathlib import Path
+          import zipfile
+
+          root = Path('artifacts')
+          files = [line.split('  ', 1)[1] for line in (root / 'SHA256SUMS').read_text(encoding='utf-8').splitlines()]
+          with zipfile.ZipFile('licenses.zip', 'w', zipfile.ZIP_DEFLATED) as archive:
+              for name in files:
+                  if name.startswith('licenses/'):
+                      archive.write(root / name, name)
+          attachments = [str(root / name) for name in files if name.endswith('.winmd')]
+          attachments.extend([str(root / 'SOURCES.md'), str(root / 'SHA256SUMS'), 'licenses.zip'])
+          Path('attachments.txt').write_text('\n'.join(attachments) + '\n', encoding='utf-8')
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          mapfile -t attachments < attachments.txt
+          options=(--draft --verify-tag --title "$TAG" --notes '来源、依赖和许可见 SOURCES.md 与 licenses.zip。')
+          if [[ "$TAG" == *-* ]]; then options+=(--prerelease); fi
+          gh release create "$TAG" "${options[@]}" "${attachments[@]}"
