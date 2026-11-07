@@ -9,7 +9,6 @@ import subprocess
 ROOT = Path(__file__).resolve().parent
 EXE = None
 REPORT = ROOT / 'verification/multiarch-query.json'
-REFERENCE = None
 
 
 def normalize(value):
@@ -23,7 +22,7 @@ def normalize(value):
 
 
 def query(path, arch, command, name):
-    proc = subprocess.run([str(EXE), str(path), str(REFERENCE), command, name, '--arch', arch, '--json'],
+    proc = subprocess.run([str(EXE), str(path), command, name, '--arch', arch, '--json'],
                           capture_output=True, text=True, encoding='utf-8')
     data = json.loads(proc.stdout)
     return data, proc.returncode
@@ -55,8 +54,6 @@ if __name__ == '__main__':
     EXE = options.winlex.resolve()
     if not EXE.is_file():
         parser.error('Winlex executable not found.')
-    config = json.loads((ROOT / 'out/toolchain.json').read_text(encoding='utf-8'))
-    REFERENCE = Path(config['win32_metadata'])
     tasks = []
     methods = {}
     for arch in ['x86', 'x64', 'arm64']:
