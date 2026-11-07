@@ -540,7 +540,7 @@ impl Encoder<'_> {
     }
 
     /// Reads forced over-alignment from `#[align(N)]`.
-    fn read_align(&self, attrs: &[syn::Attribute]) -> Result<Option<u16>, Error> {
+    fn read_align(&self, attrs: &[syn::Attribute]) -> Result<Option<i32>, Error> {
         for attr in attrs {
             if !attr.path().is_ident("align") {
                 continue;
@@ -550,9 +550,13 @@ impl Encoder<'_> {
                 return self.err(attr, "`align` attribute requires an integer argument");
             };
 
-            let Ok(size) = size_literal.base10_parse::<u16>() else {
-                return self.err(attr, "`align` size must be a valid u16");
+            let Ok(size) = size_literal.base10_parse::<i32>() else {
+                return self.err(attr, "`align` size must be a valid i32");
             };
+
+            if size <= 0 || !(size as u32).is_power_of_two() {
+                return self.err(attr, "`align` size must be a positive power of two in bytes");
+            }
 
             return Ok(Some(size));
         }

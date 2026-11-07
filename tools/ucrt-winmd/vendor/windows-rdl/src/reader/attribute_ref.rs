@@ -476,7 +476,7 @@ impl Encoder<'_> {
     ) -> Result<(), Error> {
         let attr_ref = if matches!(attr.meta, syn::Meta::Path(_)) {
             AttributeRef {
-                type_name: metadata::TypeName::named(METADATA_NAMESPACE, pseudo.metadata),
+                type_name: metadata::TypeName::named(pseudo.namespace(), pseudo.metadata),
                 args: vec![],
             }
         } else {
@@ -492,8 +492,8 @@ impl Encoder<'_> {
         pseudo: &PseudoAttr,
     ) -> Result<AttributeRef, Error> {
         let info = self
-            .find_in_reference(METADATA_NAMESPACE, pseudo.metadata)
-            .or_else(|| self.find_in_index(METADATA_NAMESPACE, pseudo.metadata))
+            .find_in_reference(pseudo.namespace(), pseudo.metadata)
+            .or_else(|| self.find_in_index(pseudo.namespace(), pseudo.metadata))
             .ok_or_else(|| self.error(attr, "pseudo-attribute type not found"))?;
 
         let raw_args: Vec<syn::Expr> = match &attr.meta {
@@ -536,15 +536,18 @@ impl Encoder<'_> {
                 METADATA_NAMESPACE,
                 "SupportedArchitectureAttribute",
             ),
-            args: vec![(String::new(), metadata::Value::I32(arch_bits))],
+            args: vec![(String::new(), metadata::Value::EnumValue(
+                metadata::TypeName::named(METADATA_NAMESPACE, "Architecture"),
+                Box::new(metadata::Value::I32(arch_bits)),
+            ))],
         };
         self.encode_named_attribute(target, &attr_ref);
     }
 
-    pub fn emit_align_attribute(&mut self, target: metadata::writer::HasAttribute, alignment: u16) {
+    pub fn emit_align_attribute(&mut self, target: metadata::writer::HasAttribute, alignment: i32) {
         let attr_ref = AttributeRef {
-            type_name: metadata::TypeName::named(METADATA_NAMESPACE, "AlignmentAttribute"),
-            args: vec![(String::new(), metadata::Value::I32(alignment as i32))],
+            type_name: metadata::TypeName::named("Winlex.Metadata", "NativeAlignmentAttribute"),
+            args: vec![(String::new(), metadata::Value::I32(alignment))],
         };
         self.encode_named_attribute(target, &attr_ref);
     }

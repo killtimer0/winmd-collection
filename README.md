@@ -7,7 +7,8 @@
 需要 Python 3.10+ 和 PowerShell 7.2+。生成 UCRT 前，先按[生成器文档](tools/ucrt-winmd/README.md#prerequisites)安装构建工具。
 
 ```powershell
-pwsh tools/ucrt-winmd/build.ps1 -Check
+python scripts/prepare-metadata.py --source win32
+pwsh tools/ucrt-winmd/build.ps1 -Check -Win32MetadataPath artifacts/Windows.Win32.winmd
 python scripts/prepare-metadata.py --ucrt-output tools/ucrt-winmd/out
 python scripts/verify-metadata.py
 ```

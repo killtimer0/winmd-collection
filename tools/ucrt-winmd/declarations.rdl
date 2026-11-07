@@ -4,5 +4,8 @@ mod Winlex {
         attribute NativeCallingConventionAttribute {
             fn(value: String);
         }
+        attribute NativeAlignmentAttribute {
+            fn(alignment: i32);
+        }
     }
 }

@@ -10,6 +10,14 @@ Based on windows-rdl 0.100.0, with its upstream license retained.
   include the attribute definition supplied in the generator's `declarations.rdl`.
 - `writer/fn.rs`: recover the declaration marker and ABI when writing RDL from
   metadata without an ImplMap. Other missing-import functions still produce errors.
+- Native typedef, encoding, bitfield and architecture attributes use official
+  `Windows.Win32.Foundation.Metadata` definitions from explicit reference metadata.
+  Architecture arguments use the official enum; attribute definitions retain their
+  own architecture markers on round trips.
+- `#[noreturn]` maps to `System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute`.
+- `#[align(...)]` maps to generator-owned
+  `Winlex.Metadata.NativeAlignmentAttribute(Int32 alignment)`, defined in
+  `declarations.rdl`. Alignment is a positive power of two in bytes, not packing.
 - `reader/param.rs` and `writer/mod.rs`: support `#[unspecified]` parameters so
   absent direction flags remain absent on round trips. Declaration mode disables
   type-based direction inference; callbacks receive explicit unspecified markers

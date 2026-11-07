@@ -5,7 +5,7 @@ from pathlib import PurePosixPath, PureWindowsPath
 
 SOURCES = {
     "win32": ("CreateFileW", ()), "wdk": ("DRIVER_OBJECT", ("win32",)),
-    "winrt": ("Uri", ()), "ucrt": ("printf", ()),
+    "winrt": ("Uri", ()), "ucrt": ("printf", ("win32",)),
     "webview2": ("CoreWebView2", ("winrt",)),
     "winui": ("Button", ("winrt", "webview2")), "win2d": ("CanvasControl", ("winrt", "webview2", "winui")),
 }

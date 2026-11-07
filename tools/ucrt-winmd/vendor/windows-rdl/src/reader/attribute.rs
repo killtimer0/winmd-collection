@@ -64,10 +64,13 @@ impl Encoder<'_> {
             flags,
         );
 
+        if let Some(bits) = self.read_arch(&item.attrs)? {
+            self.emit_arch_attribute(metadata::writer::HasAttribute::TypeDef(attr_type), bits);
+        }
         self.encode_attrs(
             metadata::writer::HasAttribute::TypeDef(attr_type),
             &item.attrs,
-            &[],
+            &["arch"],
         )?;
 
         let flags = metadata::MethodAttributes::Public

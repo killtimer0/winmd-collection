@@ -24,7 +24,7 @@ pub use reader::Reader;
 pub use writer::Writer;
 
 /// The metadata namespace that owns the Win32 attribute vocabulary.
-pub(crate) const METADATA_NAMESPACE: &str = "Windows.Win32.Metadata";
+pub(crate) const METADATA_NAMESPACE: &str = "Windows.Win32.Foundation.Metadata";
 
 /// Short RDL attribute spelling and the metadata attribute it maps to.
 pub(crate) struct PseudoAttr {
@@ -32,6 +32,16 @@ pub(crate) struct PseudoAttr {
     pub metadata: &'static str,
     /// Named property receiving a short-form positional argument, if any.
     pub prop: Option<&'static str>,
+}
+
+impl PseudoAttr {
+    pub fn namespace(&self) -> &'static str {
+        if self.metadata == "DoesNotReturnAttribute" {
+            "System.Diagnostics.CodeAnalysis"
+        } else {
+            METADATA_NAMESPACE
+        }
+    }
 }
 
 /// Pseudo-attribute table; order is metadata-significant for parameters.

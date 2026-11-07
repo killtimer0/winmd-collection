@@ -6,7 +6,7 @@ Before public distribution:
   notes in the source package.
 - Review the applicable Microsoft terms before redistributing generated metadata.
   Do not include SDK or MSVC headers in the source package.
-- Run `build.ps1 -Check` from an extracted source archive with no existing
+- Run `build.ps1 -Check -Win32MetadataPath PATH` with official Win32 metadata from an extracted source archive with no existing
   `out/` or `target/`, on an independent machine or CI runner.
 - Describe public coverage and metadata conventions and their limitations as
   documented in `README.md`.

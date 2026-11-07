@@ -13,7 +13,7 @@ fn attrs<'a>(row: impl HasAttributes<'a>) -> Vec<String> {
     let mut values: Vec<_> = row
         .attributes()
         .filter(|a| {
-            !(a.namespace() == "Windows.Win32.Metadata"
+            !(a.namespace() == "Windows.Win32.Foundation.Metadata"
                 && a.name() == "SupportedArchitectureAttribute")
         })
         .map(|a| format!("{}.{}={:?}", a.namespace(), a.name(), a.value()))

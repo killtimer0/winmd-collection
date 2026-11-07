@@ -1,6 +1,7 @@
 #requires -Version 7.2
 [CmdletBinding()]
 param(
+    [Parameter(Mandatory)][string]$Win32MetadataPath,
     [string]$SdkIncludePath,
     [string]$MsvcIncludePath,
     [string]$ClangPath = 'clang',
@@ -12,6 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/scripts/toolchain.ps1"
+$Win32MetadataPath = (Resolve-Path -LiteralPath $Win32MetadataPath).Path
 Push-Location $PSScriptRoot
 $saved = @{}
 foreach ($name in @('PATH', 'LIBCLANG_PATH', 'CARGO_TARGET_DIR')) {
@@ -21,6 +23,7 @@ try {
     New-Item out -ItemType Directory -Force | Out-Null
     Remove-Item out/manifest.json -ErrorAction SilentlyContinue
     $toolchain = Get-CrtToolchain -SdkIncludePath $SdkIncludePath -MsvcIncludePath $MsvcIncludePath -ClangPath $ClangPath -LibClangPath $LibClangPath
+    $toolchain['win32_metadata'] = $Win32MetadataPath
     $toolchain | ConvertTo-Json -Depth 8 | Set-Content out/toolchain.json -Encoding utf8NoBOM
     $env:LIBCLANG_PATH = $toolchain.libclang_path
     $env:PATH = "$(Split-Path $toolchain.clang_path);$env:PATH"

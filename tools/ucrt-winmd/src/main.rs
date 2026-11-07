@@ -3,13 +3,23 @@ use std::error::Error;
 fn main() -> Result<(), Box<dyn Error>> {
     std::env::set_current_dir(env!("CARGO_MANIFEST_DIR"))?;
     let arch = std::env::args().nth(1).unwrap_or_else(|| "x64".into());
+    let config: serde_json::Value = serde_json::from_slice(
+        &std::fs::read("out/toolchain.json")
+            .map_err(|error| format!("{error}; configure the toolchain with build.ps1 first"))?,
+    )?;
+    let reference = std::path::Path::new(
+        config["win32_metadata"]
+            .as_str()
+            .ok_or("toolchain win32_metadata is required")?,
+    );
     if arch == "merge" {
         let mut merger = windows_metadata::merge::Merger::new();
+        merger.reference(reference);
         for (name, bits) in [("x86", 1), ("x64", 2), ("arm64", 4)] {
             merger.arch_input(format!("out/{name}/UCRT.winmd"), bits);
         }
         merger.output("out/UCRT.winmd").merge()?;
-        roundtrip(std::path::Path::new("out"))?;
+        roundtrip(std::path::Path::new("out"), reference)?;
         return Ok(());
     }
     let target = match arch.as_str() {
@@ -20,10 +30,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let out = std::path::PathBuf::from("out").join(&arch);
     std::fs::create_dir_all(&out)?;
-    let config: serde_json::Value = serde_json::from_slice(
-        &std::fs::read("out/toolchain.json")
-            .map_err(|error| format!("{error}; configure the toolchain with build.ps1 first"))?,
-    )?;
     let mut args = clang_args(&config)?;
     args.push(format!("--target={target}"));
     let clang_version = windows_clang::clang_version()?;
@@ -52,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .input(out.join("rdl"))
         .input("strings.rdl")
         .input("declarations.rdl")
-        .reference_default()
+        .reference(reference)
         .output(out.join("UCRT.untagged.winmd"))
         .write()?;
     let bits = match arch.as_str() {
@@ -61,10 +67,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         _ => 4,
     };
     windows_metadata::merge::Merger::new()
+        .reference(reference)
         .arch_input(out.join("UCRT.untagged.winmd"), bits)
         .output(out.join("UCRT.winmd"))
         .merge()?;
-    roundtrip(&out)?;
+    roundtrip(&out, reference)?;
     write_inventory(&out)?;
     std::fs::write(
         out.join("generation.json"),
@@ -83,14 +90,14 @@ fn clang_args(config: &serde_json::Value) -> Result<Vec<String>, Box<dyn Error>>
     Ok(args)
 }
 
-fn roundtrip(out: &std::path::Path) -> Result<(), Box<dyn Error>> {
+fn roundtrip(out: &std::path::Path, reference: &std::path::Path) -> Result<(), Box<dyn Error>> {
     windows_rdl::writer()
         .input(out.join("UCRT.winmd"))
         .output(out.join("roundtrip.rdl"))
         .write()?;
     windows_rdl::reader()
         .input(out.join("roundtrip.rdl"))
-        .reference_default()
+        .reference(reference)
         .output(out.join("UCRT.roundtrip.winmd"))
         .write()?;
     Ok(())

@@ -623,7 +623,9 @@ fn write_custom_attributes_except<'a>(
 ) -> Result<Vec<TokenStream>, Error> {
     let mut rendered = attributes
         .filter(|attr| {
-            !(namespace_starts_with(attr.namespace(), "System")
+            !((namespace_starts_with(attr.namespace(), "System")
+                && !(attr.namespace() == "System.Diagnostics.CodeAnalysis"
+                    && attr.name() == "DoesNotReturnAttribute"))
                 || exclude.contains(&attr.name())
                 || (attr.namespace() == METADATA_NAMESPACE
                     && attr.name() == "NativeTypedefAttribute"))
@@ -633,12 +635,9 @@ fn write_custom_attributes_except<'a>(
             let values = attr.value();
 
             // Naturalized metadata attributes render as short RDL spellings when possible.
-            let pseudo = if attr_ns == METADATA_NAMESPACE {
-                let arg_names: Vec<String> = values.iter().map(|(n, _)| n.clone()).collect();
-                pseudo_for_metadata(attr.name(), &arg_names)
-            } else {
-                None
-            };
+            let arg_names: Vec<String> = values.iter().map(|(n, _)| n.clone()).collect();
+            let pseudo = pseudo_for_metadata(attr.name(), &arg_names)
+                .filter(|pseudo| pseudo.namespace() == attr_ns);
 
             let name_ts = if let Some(pseudo) = pseudo {
                 write_ident(pseudo.short)

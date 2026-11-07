@@ -35,9 +35,16 @@ pub struct Merger {
     arch_inputs: Vec<(PathBuf, i32)>,
     output: PathBuf,
     union_enums: bool,
+    reference: Vec<PathBuf>,
 }
 
 impl Merger {
+    /// Adds external metadata used to resolve references, without copying its definitions.
+    pub fn reference(&mut self, path: impl AsRef<Path>) -> &mut Self {
+        self.reference.push(path.as_ref().to_path_buf());
+        self
+    }
+
     /// Creates an empty merge configuration.
     pub fn new() -> Self {
         Self::default()
@@ -105,6 +112,7 @@ impl Merger {
         let index = reader::Index::new(files);
 
         let mut file = writer::File::new(name);
+        file.set_reference(reader::Index::new(read_inputs(&self.reference)?));
 
         if self.union_enums {
             let mut groups: BTreeMap<(String, String), Vec<reader::TypeDef<'_>>> = BTreeMap::new();
@@ -397,9 +405,10 @@ fn write_field(file: &mut writer::File, field: reader::Field, arch_override: Opt
 fn type_arch_bits(def: reader::TypeDef) -> i32 {
     for attribute in def.attributes() {
         let ty = attribute.ctor().parent();
-        if ty.namespace() == "Windows.Win32.Metadata"
+        if ty.namespace() == "Windows.Win32.Foundation.Metadata"
             && ty.name() == "SupportedArchitectureAttribute"
-            && let Some((_, Value::I32(bits))) = attribute.value().first()
+            && let Some((_, Value::EnumValue(_, value))) = attribute.value().first()
+            && let Value::I32(bits) = value.as_ref()
         {
             return *bits;
         }
@@ -759,7 +768,7 @@ fn callback_attributes<'a, R: HasAttributes<'a>>(
     row.attributes()
         .filter_map(|attribute| {
             let ty = attribute.ctor().parent();
-            (!(ty.namespace() == "Windows.Win32.Metadata"
+            (!(ty.namespace() == "Windows.Win32.Foundation.Metadata"
                 && ty.name() == "SupportedArchitectureAttribute"))
                 .then(|| {
                     (
@@ -927,7 +936,7 @@ fn type_sig(index: &reader::Index, def: reader::TypeDef) -> String {
         .class_layout()
         .map(|l| (l.packing_size(), l.class_size()));
     let align = def
-        .find_attribute("AlignmentAttribute")
+        .find_attribute("NativeAlignmentAttribute")
         .map(|a| format!("{:?}", a.value()));
     // Recurse into nested shapes; outer fields reference only invariant nested leaf names.
     let nested: Vec<String> = index
@@ -964,7 +973,7 @@ fn write_attributes_with_arch<'a, R: HasAttributes<'a>>(
         let ty = ctor.parent();
 
         if arch_override.is_some()
-            && ty.namespace() == "Windows.Win32.Metadata"
+            && ty.namespace() == "Windows.Win32.Foundation.Metadata"
             && ty.name() == "SupportedArchitectureAttribute"
         {
             continue;
@@ -994,7 +1003,7 @@ fn write_supported_architecture_attr(
     parent: writer::HasAttribute,
     arch_bits: i32,
 ) {
-    let ns = "Windows.Win32.Metadata";
+    let ns = "Windows.Win32.Foundation.Metadata";
     let name = "SupportedArchitectureAttribute";
 
     let type_ref = writer::MemberRefParent::TypeRef(file.TypeRef(ns, name));
@@ -1002,7 +1011,7 @@ fn write_supported_architecture_attr(
     let sig = Signature {
         flags: MethodCallAttributes::HASTHIS,
         return_type: Type::Void,
-        types: vec![Type::I32],
+        types: vec![Type::value_named(ns, "Architecture")],
     };
 
     let ctor_ref = file.MemberRef(".ctor", &sig, type_ref);
@@ -1010,6 +1019,6 @@ fn write_supported_architecture_attr(
     file.Attribute(
         parent,
         writer::AttributeType::MemberRef(ctor_ref),
-        &[(String::new(), Value::I32(arch_bits))],
+        &[(String::new(), Value::EnumValue(TypeName::named(ns, "Architecture"), Box::new(Value::I32(arch_bits))))],
     );
 }

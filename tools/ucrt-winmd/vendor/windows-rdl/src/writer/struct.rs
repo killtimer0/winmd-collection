@@ -107,7 +107,7 @@ fn write_record(
         item.attributes(),
         namespace,
         item.index(),
-        &["SupportedArchitectureAttribute", "AlignmentAttribute"],
+        &["SupportedArchitectureAttribute", "NativeAlignmentAttribute"],
     )?;
 
     if inline {
@@ -180,7 +180,7 @@ fn hoist_subtree(
         node.attributes(),
         namespace,
         node.index(),
-        &["SupportedArchitectureAttribute", "AlignmentAttribute"],
+        &["SupportedArchitectureAttribute", "NativeAlignmentAttribute"],
     )?;
 
     hoisted.push((
@@ -314,7 +314,9 @@ fn write_packed_attr_value(packing: Option<u16>) -> TokenStream {
 }
 
 fn write_align_attr(item: &metadata::reader::TypeDef) -> TokenStream {
-    let Some(attribute) = item.find_attribute("AlignmentAttribute") else {
+    let Some(attribute) = item.attributes().find(|attribute| {
+        attribute.namespace() == "Winlex.Metadata" && attribute.name() == "NativeAlignmentAttribute"
+    }) else {
         return quote! {};
     };
     let Some((_, metadata::Value::I32(alignment))) = attribute.value().into_iter().next() else {

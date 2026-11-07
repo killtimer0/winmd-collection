@@ -25,6 +25,20 @@ pub enum Item<'a> {
 }
 
 impl Index {
+    pub(crate) fn reference_assembly(&self, namespace: &str, name: &str) -> Option<AssemblyRef<'_>> {
+        for (file_pos, file) in self.files.iter().enumerate() {
+            for pos in file.TypeRef() {
+                let ty = TypeRef::from_row(Row::new(self, file_pos, pos));
+                if ty.namespace() == namespace && ty.name() == name
+                    && let ResolutionScope::AssemblyRef(assembly) = ty.scope()
+                {
+                    return Some(assembly);
+                }
+            }
+        }
+        None
+    }
+
     /// Reads a single metadata file from disk and builds an `Index` for it.
     #[must_use]
     pub fn read<P: AsRef<std::path::Path>>(path: P) -> Option<Self> {

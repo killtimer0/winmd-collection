@@ -15,6 +15,10 @@ Changes to reading and merging metadata:
 - Signature decoding retains enclosing TypeRef scopes as qualified nested names,
   allowing rewriters to preserve references through a merge.
 - Input directory enumeration errors are returned to the caller.
+- Merge reference inputs resolve external type owners without copying definitions;
+  AssemblyRef reading and writing retain referenced system assembly identities.
+- Architecture attributes use the official Foundation.Metadata namespace and
+  Architecture enum constructor. NativeAlignmentAttribute remains generator-owned.
 
 These changes support the generator's declaration-only CRT inputs; the merger is
 not a general lossless rewriter for arbitrary ECMA-335 assemblies.

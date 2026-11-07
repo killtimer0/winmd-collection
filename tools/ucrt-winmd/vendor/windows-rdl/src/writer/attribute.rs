@@ -26,9 +26,13 @@ pub fn write_attribute(item: &metadata::reader::TypeDef) -> Result<TokenStream, 
         }
     });
 
-    let custom_attrs = write_custom_attributes(item.attributes(), namespace, item.index())?;
+    let arch_attr = write_arch_attr(item.arches());
+    let custom_attrs = write_custom_attributes_except(
+        item.attributes(), namespace, item.index(), &["SupportedArchitectureAttribute"],
+    )?;
 
     Ok(quote! {
+        #arch_attr
         #(#custom_attrs)*
         attribute #name {
             #(#methods)*

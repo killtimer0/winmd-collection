@@ -42,9 +42,11 @@ jobs:
           "LLVM_BIN=$env:ProgramFiles/LLVM/bin" >> $env:GITHUB_ENV
       - name: Test preparation scripts
         run: python -m unittest discover -s tests -v
+      - name: Prepare official Win32 metadata
+        run: python scripts/prepare-metadata.py --source win32
       - name: Generate and check UCRT
         run: |
-          ./tools/ucrt-winmd/build.ps1 -Check -SdkIncludePath $env:SDK_INCLUDE `
+          ./tools/ucrt-winmd/build.ps1 -Check -Win32MetadataPath "$pwd/artifacts/Windows.Win32.winmd" -SdkIncludePath $env:SDK_INCLUDE `
             -MsvcIncludePath $env:MSVC_INCLUDE -ClangPath "$env:LLVM_BIN/clang.exe" -LibClangPath $env:LLVM_BIN
       - name: Prepare metadata
         run: python scripts/prepare-metadata.py --sdk-include "$env:SDK_INCLUDE" --ucrt-output tools/ucrt-winmd/out

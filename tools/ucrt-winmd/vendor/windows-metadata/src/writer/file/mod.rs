@@ -168,8 +168,15 @@ impl File {
                 .and_then(|r| r.assembly_name(namespace, name))
                 .map(str::to_string);
 
+            let inherited_scope = if assembly_name.is_none() {
+                self.reference_assembly(namespace, name)
+            } else {
+                None
+            };
             let scope = if let Some(assembly_name) = assembly_name {
                 ResolutionScope::AssemblyRef(self.AssemblyRef(&assembly_name))
+            } else if let Some(assembly) = inherited_scope {
+                ResolutionScope::AssemblyRef(assembly)
             } else if namespace == "System" {
                 ResolutionScope::AssemblyRef(self.AssemblyRef("System"))
             } else {
@@ -189,6 +196,30 @@ impl File {
             .insert(name.to_string(), pos);
 
         pos
+    }
+
+    fn reference_assembly(&mut self, namespace: &str, name: &str) -> Option<AssemblyRef> {
+        use reader::AsRow;
+        let source = self.reference.as_ref()?.reference_assembly(namespace, name)?;
+        let assembly_name = source.str(3).to_string();
+        if let Some(assembly) = self.AssemblyRef.get(&assembly_name) {
+            return Some(*assembly);
+        }
+        let version = source.file().u64(source.pos(), reader::AssemblyRef::TABLE, 0);
+        let record = rec::AssemblyRef {
+            MajorVersion: version as u16,
+            MinorVersion: (version >> 16) as u16,
+            BuildNumber: (version >> 32) as u16,
+            RevisionNumber: (version >> 48) as u16,
+            Flags: AssemblyFlags(source.usize(1) as u32),
+            PublicKeyOrToken: self.blobs.insert(source.file().blob(source.pos(), reader::AssemblyRef::TABLE, 2)),
+            Name: self.strings.insert(&assembly_name),
+            Culture: self.strings.insert(source.str(4)).0,
+            HashValue: self.blobs.insert(source.file().blob(source.pos(), reader::AssemblyRef::TABLE, 5)).0,
+        };
+        let assembly = AssemblyRef(self.records.AssemblyRef.push_pos(record));
+        self.AssemblyRef.insert(assembly_name, assembly);
+        Some(assembly)
     }
 
     pub fn TypeSpec(&mut self, namespace: &str, name: &str, generics: &[Type]) -> TypeSpec {

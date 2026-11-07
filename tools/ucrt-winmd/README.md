@@ -17,6 +17,9 @@ dependencies.
   beside it, or explicit paths as shown below. LLVM and MSYS2 Clang distributions
   can be used; parsing always targets MSVC, not the MinGW ABI.
 - Python 3.10+ only for `-Check` or optional Winlex integration checks.
+- Official `Windows.Win32.winmd` from Microsoft.Windows.SDK.Win32Metadata,
+  providing the public native metadata attributes. The collection can prepare it
+  with `python scripts/prepare-metadata.py --source win32`.
 
 Clang and libclang must have matching versions and loadable runtime dependencies.
 Dependency sources and licenses are listed in `THIRD-PARTY-NOTICES.md`.
@@ -26,7 +29,7 @@ Dependency sources and licenses are listed in `THIRD-PARTY-NOTICES.md`.
 Run in PowerShell, from an extracted source directory:
 
 ```powershell
-./build.ps1
+./build.ps1 -Win32MetadataPath 'D:/Metadata/Windows.Win32.winmd'
 ```
 
 The script discovers installed SDK/MSVC headers and Clang, then generates all
@@ -35,7 +38,8 @@ three architecture baselines and the combined artifact.
 To select particular versions or nonstandard installations:
 
 ```powershell
-./build.ps1 -SdkIncludePath 'D:/SDK/Include/10.0.x.y' `
+./build.ps1 -Win32MetadataPath 'D:/Metadata/Windows.Win32.winmd' `
+  -SdkIncludePath 'D:/SDK/Include/10.0.x.y' `
   -MsvcIncludePath 'D:/VS/VC/Tools/MSVC/14.x.y/include' `
   -ClangPath 'D:/LLVM/bin/clang.exe' -LibClangPath 'D:/LLVM/bin'
 ```
@@ -64,7 +68,7 @@ declarations depend on the selected SDK and compiler versions.
 Maintainer checks do not use Winlex:
 
 ```powershell
-./build.ps1 -Check
+./build.ps1 -Check -Win32MetadataPath 'D:/Metadata/Windows.Win32.winmd'
 ```
 
 This checks generated metadata against the selected headers, architecture
@@ -74,7 +78,7 @@ not on PATH. Python scripts must run without `-O` so their assertions execute.
 To check queries and layouts with Winlex, supply a compatible CLI:
 
 ```powershell
-./build.ps1 -Check -WinlexPath 'D:/Tools/winlex.exe'
+./build.ps1 -Check -Win32MetadataPath 'D:/Metadata/Windows.Win32.winmd' -WinlexPath 'D:/Tools/winlex.exe'
 ```
 
 Standalone commands are
@@ -95,9 +99,17 @@ alignments and field offsets for each supported architecture.
   integers and `intptr_t`/`ptrdiff_t` native signed integers. `rsize_t` references
   `size_t`; ordinary fixed-width integers are not normalized this way.
 - Identical definitions are shared; actual differences retain
-  `Windows.Win32.Metadata.SupportedArchitectureAttribute` masks (1=X86, 2=X64,
+  `Windows.Win32.Foundation.Metadata.SupportedArchitectureAttribute(Architecture)` masks (1=X86, 2=X64,
   4=Arm64). No mask means all three. Consumers must select the requested
   architecture before resolving same-named variants or calculating layout.
+- Typedef, encoding, bitfield and architecture attributes reference the supplied
+  official Win32 metadata; their definitions are not copied into UCRT.
+- `Winlex.Metadata.NativeAlignmentAttribute(Int32 alignment)` records explicit
+  native alignment in bytes, a positive power of two, independently of packing
+  and field offsets. It is defined in UCRT and round-trips as `#[align(...)]`.
+- No-return markers use `System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute`
+  and its system assembly identity from the official reference. System type
+  definitions are not included in UCRT.
 - Header inline functions are retained only as declarations. Unannotated
   declaration/callback parameters retain unspecified direction, including after
   round trips.

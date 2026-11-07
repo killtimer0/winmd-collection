@@ -116,6 +116,10 @@ function Write-CrtManifest([string]$Root, $Toolchain, [bool]$Checked, [bool]$Win
     [ordered]@{
         schema_version = 1
         toolchain = $Toolchain
+        metadata_references = @([ordered]@{
+            path = $Toolchain.win32_metadata
+            sha256 = (Get-FileHash -LiteralPath $Toolchain.win32_metadata -Algorithm SHA256).Hash.ToLowerInvariant()
+        })
         generation = @($generation)
         checks = @{ contracts = $(if ($Checked -or $WinlexChecked) { 'passed' } else { 'not-run' }); ast_audit_and_clippy = $(if ($Checked) { 'passed' } else { 'not-run' }); winlex = $(if ($WinlexChecked) { 'passed' } else { 'not-run' }) }
         source_inputs = $inputs
