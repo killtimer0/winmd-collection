@@ -90,12 +90,7 @@ impl Typedef {
             return Ok(None);
         }
 
-        // Flat Win32 scrapes keep only the canonical string-pointer wrappers. Namespaced
-        // scrapes must keep local `LP*` aliases because their references are not normalized.
-        if parser.header_root.is_some()
-            && let Some(canonical) = string_alias_canonical(&name)
-            && canonical != name
-        {
+        if string_alias_canonical(&name).is_some() {
             return Ok(None);
         }
 

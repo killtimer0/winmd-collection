@@ -10,6 +10,44 @@ pub struct Callback {
 }
 
 impl Callback {
+    pub fn anonymous(function: &Type, parser: &mut Parser<'_>) -> metadata::Type {
+        if function.is_variadic() {
+            parser.unsupported_callback = Some(format!(
+                "unsupported variadic anonymous callback: {}",
+                function.spelling()
+            ));
+            return metadata::Type::Void;
+        }
+        let return_type = function.fn_result_type().to_type(parser);
+        let params: Vec<_> = function
+            .fn_arg_types()
+            .into_iter()
+            .enumerate()
+            .map(|(index, ty)| Param {
+                name: format!("arg{index}"),
+                ty: ty.to_type(parser),
+                annotation: ParamAnnotation::default(),
+            })
+            .collect();
+        let calling_convention = function.fn_calling_convention(parser);
+        let signature = format!(
+            "{return_type:?}:{:?}:{calling_convention:?}",
+            params.iter().map(|param| &param.ty).collect::<Vec<_>>()
+        );
+        let hash = signature.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
+            (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
+        });
+        let name = format!("__callback_{hash:016x}");
+        let ty = metadata::Type::value_named(parser.namespace, &name);
+        parser.pending_callbacks.push(Self {
+            name,
+            params,
+            return_type,
+            calling_convention,
+        });
+        ty
+    }
+
     /// Parse a non-variadic function-pointer typedef as a callback.
     pub fn parse(cursor: Cursor, parser: &mut Parser<'_>) -> Result<Option<Self>, Error> {
         let name = cursor.name();
@@ -88,19 +126,21 @@ impl Callback {
             let name = write_ident(&param.name);
             let ty = write_type(namespace, &param.ty);
             let attrs = param_attrs_for_annotation(&param.annotation, &param.ty);
+            let const_attr = const_string_attribute(&param.ty);
             let unspecified = if !param.annotation.in_param && !param.annotation.out_param {
                 quote! { #[unspecified] }
             } else {
                 quote! {}
             };
-            quote! { #(#attrs)* #unspecified #name: #ty }
+            quote! { #(#attrs)* #const_attr #unspecified #name: #ty }
         });
 
         let return_type = match &self.return_type {
             metadata::Type::Void => quote! {},
             ty => {
+                let const_attr = const_string_attribute(ty);
                 let ty = write_type(namespace, ty);
-                quote! { -> #ty }
+                quote! { -> #const_attr #ty }
             }
         };
 

@@ -555,7 +555,10 @@ impl Encoder<'_> {
             };
 
             if size <= 0 || !(size as u32).is_power_of_two() {
-                return self.err(attr, "`align` size must be a positive power of two in bytes");
+                return self.err(
+                    attr,
+                    "`align` size must be a positive power of two in bytes",
+                );
             }
 
             return Ok(Some(size));
@@ -1008,12 +1011,6 @@ impl Encoder<'_> {
             }
             metadata::Type::PtrConst(inner, pointers) if !is_mut => {
                 metadata::Type::PtrConst(inner, pointers + 1)
-            }
-            metadata::Type::PtrMut(..) | metadata::Type::PtrConst(..) => {
-                return self.err(
-                    ty.elem.as_ref(),
-                    "mixed `*mut` and `*const` pointer chains are not representable",
-                );
             }
             _ => {
                 if is_mut {

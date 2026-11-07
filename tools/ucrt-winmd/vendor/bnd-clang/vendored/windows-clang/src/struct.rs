@@ -383,7 +383,8 @@ impl Struct {
                     quote! { #name: #inner, }
                 } else {
                     let ty = write_type(namespace, &field.ty);
-                    quote! { #name: #ty, }
+                    let const_attr = const_string_attribute(&field.ty);
+                    quote! { #const_attr #name: #ty, }
                 }
             })
             .collect()

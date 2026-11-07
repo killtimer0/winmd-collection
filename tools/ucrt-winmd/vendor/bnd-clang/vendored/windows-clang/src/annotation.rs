@@ -1,6 +1,6 @@
 use super::*;
 
-/// SAL, legacy direction, and MIDL parameter flags; unset flags let the reader infer from type.
+/// Explicit SAL, legacy direction, and MIDL parameter flags.
 #[derive(Debug, Default, Clone)]
 pub struct ParamAnnotation {
     pub in_param: bool,
@@ -122,29 +122,57 @@ fn split_sal_annotation(s: &str) -> (&str, Option<&str>) {
 /// Captures only unambiguous literal or identifier SAL sizes.
 fn capture_sal_size(name: &str, arg: Option<&str>) -> Option<SalSize> {
     let bytes = sal_size_kind(name)?;
-    // `_*_to_`/`_*_part_` variants carry the buffer extent first.
-    let first = arg?.split(',').next()?.trim();
+    // `_*_to_` variants carry the buffer extent before the initialized length.
+    let arg = arg?;
+    let first = if (name.ends_with("_to_") || name.ends_with("_to_opt_"))
+        && let Some((extent, initialized)) = arg.split_once(',')
+    {
+        eprintln!(
+            "warning: unsupported SAL initialized/written length {} in {name}({arg}); initialized/written length omitted; buffer extent handled separately",
+            initialized.trim()
+        );
+        extent.trim()
+    } else {
+        arg.trim()
+    };
+    let parsed = parse_size_arg(first);
+    if parsed.is_none() {
+        eprintln!(
+            "warning: unsupported SAL length {name}({}); length relationship omitted",
+            arg
+        );
+    }
     Some(SalSize {
         bytes,
-        arg: parse_size_arg(first)?,
+        arg: parsed?,
     })
 }
 
 fn sal_size_kind(name: &str) -> Option<bool> {
-    let is_size =
-        name.contains("_reads_") || name.contains("_writes_") || name.contains("_updates_");
-    is_size.then(|| name.contains("_bytes"))
+    let suffix = name
+        .strip_prefix("_In_reads_")
+        .or_else(|| name.strip_prefix("_Out_writes_"))
+        .or_else(|| name.strip_prefix("_Inout_updates_"))?;
+    let bytes = suffix.starts_with("bytes_");
+    let suffix = suffix.strip_prefix("bytes_").unwrap_or(suffix);
+    if matches!(
+        suffix,
+        "" | "opt_" | "z_" | "opt_z_" | "to_" | "to_opt_" | "all_" | "all_opt_"
+    ) {
+        Some(bytes)
+    } else {
+        eprintln!("warning: unsupported SAL length macro {name}; length relationship omitted");
+        None
+    }
 }
 
-/// Parses simple SAL size arguments; strips `*param` because the pointer parameter is
-/// the count carrier.
+/// Parses direct count carriers only; dereferences and expressions need different semantics.
 fn parse_size_arg(s: &str) -> Option<SalSizeArg> {
     let s = s.trim();
-    if let Some(n) = parse_int_literal(s) {
+    if let Some(n) = parse_int_literal(s).filter(|n| *n >= 0) {
         Some(SalSizeArg::Const(n))
     } else {
-        let name = s.trim_start_matches('*').trim();
-        is_c_identifier(name).then(|| SalSizeArg::Name(name.to_string()))
+        is_c_identifier(s).then(|| SalSizeArg::Name(s.to_string()))
     }
 }
 
@@ -152,6 +180,8 @@ fn parse_int_literal(s: &str) -> Option<i32> {
     let t = s.trim_end_matches(['u', 'U', 'l', 'L']);
     if let Some(hex) = t.strip_prefix("0x").or_else(|| t.strip_prefix("0X")) {
         i32::from_str_radix(hex, 16).ok()
+    } else if t.starts_with('0') && t.len() > 1 {
+        i32::from_str_radix(&t[1..], 8).ok()
     } else {
         t.parse::<i32>().ok()
     }
@@ -268,11 +298,17 @@ pub(crate) fn parse_params(
             name = format!("param{param_idx}");
         }
         let sal_annotation = extract_param_annotation(&child, parser.tu);
-        let mut annotation = if sal_annotation.is_annotated() {
-            sal_annotation
-        } else {
-            midl_annotations.get(param_idx).cloned().unwrap_or_default()
-        };
+        let mut annotation = midl_annotations.get(param_idx).cloned().unwrap_or_default();
+        annotation.in_param |= sal_annotation.in_param;
+        annotation.out_param |= sal_annotation.out_param;
+        annotation.optional |= sal_annotation.optional;
+        annotation.retval |= sal_annotation.retval;
+        annotation.reserved |= sal_annotation.reserved;
+        annotation.com_out_ptr |= sal_annotation.com_out_ptr;
+        annotation.null_terminated |= sal_annotation.null_terminated;
+        if sal_annotation.size.is_some() {
+            annotation.size = sal_annotation.size;
+        }
         let cursor_ty = child.ty();
         normalize_direct_interface_annotation(&cursor_ty, &mut annotation);
         let mut ty = param_metadata_type(&cursor_ty, &annotation, parser);
@@ -320,13 +356,19 @@ pub fn resolve_param_array_info(params: &mut [Param]) {
         .map(|p| {
             p.annotation.size.as_ref().and_then(|size| match &size.arg {
                 SalSizeArg::Const(n) if !size.bytes => Some(ArrayInfo::CountConst(*n)),
-                SalSizeArg::Const(_) => None,
+                SalSizeArg::Const(n) => {
+                    eprintln!("warning: unsupported constant SAL byte length {n} for {}; length relationship omitted", p.name);
+                    None
+                }
                 SalSizeArg::Name(name) => index_of.get(name.as_str()).map(|&idx| {
                     if size.bytes {
                         ArrayInfo::BytesParamIndex(idx)
                     } else {
                         ArrayInfo::CountParamIndex(idx)
                     }
+                }).or_else(|| {
+                    eprintln!("warning: unresolved SAL length parameter {name} for {}; length relationship omitted", p.name);
+                    None
                 }),
             })
         })
@@ -353,7 +395,7 @@ pub fn scan_method_param_annotations(
     let mut paren_depth: i32 = 0;
     let mut in_params = false;
 
-    for (kind, spelling) in tokens {
+    for (token_index, (kind, spelling)) in tokens.iter().enumerate() {
         if !past_name {
             if *kind == CXToken_Identifier && spelling == method_name {
                 past_name = true;
@@ -411,33 +453,42 @@ pub fn scan_method_param_annotations(
             {
                 current.optional = true;
             }
-            // Recover bare pure `_z_` SAL tokens for COM methods; counted buffers stay raw.
-            (CXToken_Identifier, s)
-                if in_params && paren_depth == 1 && s.starts_with("_COM_Outptr_") =>
-            {
-                current.out_param = true;
-                current.com_out_ptr_token = true;
-                if s.starts_with("_COM_Outptr_opt") {
-                    current.optional = true;
-                }
-            }
-            // Abstract COM methods can expose `_COM_Outptr_` only as a token. Record it
-            // speculatively, including `_opt_`; `parse_params` promotes only `void**`.
-            (CXToken_Identifier, s)
-                if in_params
-                    && paren_depth == 1
-                    && matches!(
-                        s,
-                        "_In_z_" | "_In_opt_z_" | "_Out_z_" | "_Inout_z_" | "_Inout_opt_z_"
-                    ) =>
-            {
+            (CXToken_Identifier, s) if in_params && paren_depth == 1 => {
                 apply_sal_string(s, &mut current);
+                // Token-only COM annotations are promoted only for caller-chosen `void**`.
+                if s.starts_with("_COM_Outptr_") {
+                    current.com_out_ptr = false;
+                    current.com_out_ptr_token = true;
+                }
+                if current.size.is_none() {
+                    let arg = sal_token_argument(&tokens[token_index + 1..]);
+                    current.size = capture_sal_size(s, arg.as_deref());
+                }
             }
             _ => {}
         }
     }
 
     result
+}
+
+fn sal_token_argument(tokens: &[(CXTokenKind, String)]) -> Option<String> {
+    if tokens.first()?.1 != "(" {
+        return None;
+    }
+    let mut depth = 0;
+    let mut argument = String::new();
+    for (_, spelling) in &tokens[1..] {
+        match spelling.as_str() {
+            ")" if depth == 0 => return Some(argument),
+            "(" => depth += 1,
+            ")" => depth -= 1,
+            _ => {}
+        }
+        argument.push_str(spelling);
+        argument.push(' ');
+    }
+    None
 }
 
 pub fn apply_midl_param_comment(comment: &str, annotation: &mut ParamAnnotation) {
@@ -461,6 +512,15 @@ pub fn apply_midl_param_comment(comment: &str, annotation: &mut ParamAnnotation)
 
 /// Handles known Win32 SAL names and ignores unrelated annotations.
 fn apply_sal_string(sal: &str, annotation: &mut ParamAnnotation) {
+    if !(sal.starts_with("_In_")
+        || sal.starts_with("_Out_")
+        || sal.starts_with("_Inout_")
+        || sal.starts_with("_Outptr_")
+        || sal.starts_with("_COM_Outptr_")
+        || sal == "_Reserved_")
+    {
+        return;
+    }
     // Exact directional prefixes; near-namesakes (`_Outref_`, `_Inexpressible_`) carry no meaning.
     if sal.starts_with("_In_") || sal.starts_with("_Inout_") {
         annotation.in_param = true;
@@ -494,10 +554,10 @@ fn apply_sal_string(sal: &str, annotation: &mut ParamAnnotation) {
     }
 }
 
-/// Emits only attributes needed to match reader defaults and writer ordering.
+/// Preserves explicit source directions even when they match type-based defaults.
 pub fn param_attrs_for_annotation(
     annotation: &ParamAnnotation,
-    ty: &metadata::Type,
+    _ty: &metadata::Type,
 ) -> Vec<TokenStream> {
     if !annotation.is_annotated() {
         return vec![];
@@ -507,8 +567,6 @@ pub fn param_attrs_for_annotation(
     let out_param = annotation.out_param;
     let optional = annotation.optional;
     let retval = annotation.retval;
-
-    let is_mutable = matches!(ty, metadata::Type::RefMut(_) | metadata::Type::PtrMut(..));
 
     let mut attrs = vec![];
 
@@ -526,13 +584,11 @@ pub fn param_attrs_for_annotation(
         attrs.push(quote! { #[iid_is] });
     }
 
-    // Emit `#[in]` only when it overrides the type-based default or marks In+Out.
-    if in_param && (out_param || is_mutable) {
+    if in_param {
         attrs.push(quote! { #[r#in] });
     }
 
-    // Emit `#[out]` only when it overrides the type-based default or marks In+Out.
-    if out_param && (in_param || !is_mutable) {
+    if out_param {
         attrs.push(quote! { #[out] });
     }
 

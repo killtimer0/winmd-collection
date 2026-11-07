@@ -82,6 +82,8 @@ pub(crate) struct Parser<'a> {
     pub enum_merge: &'a HashMap<String, &'static str>,
     pub tu: &'a TranslationUnit,
     pub pending_typedefs: Vec<Cursor>,
+    pub pending_callbacks: Vec<Callback>,
+    pub unsupported_callback: Option<String>,
     pub pending_records: Vec<Cursor>,
     pub pending_macros: Vec<String>,
     processing_dependency: bool,
@@ -148,6 +150,8 @@ impl<'a> Parser<'a> {
             enum_merge,
             tu,
             pending_typedefs: vec![],
+            pending_callbacks: vec![],
+            unsupported_callback: None,
             pending_records: vec![],
             pending_macros: vec![],
             processing_dependency: false,
@@ -1392,6 +1396,12 @@ impl Clang {
                 parser.process_cursor(child, collector, extern_c)?;
             }
 
+            if let Some(message) = parser.unsupported_callback.take() {
+                return Err(Error::new(&message, "", 0, 0));
+            }
+            for callback in std::mem::take(&mut parser.pending_callbacks) {
+                collector.insert(Item::Callback(callback));
+            }
             collector.apply_iid_vars(&parser.iid_vars);
 
             let pending = std::mem::take(&mut parser.pending_macros);
@@ -1663,6 +1673,13 @@ impl Clang {
                     result?;
                 }
             }
+        }
+
+        if let Some(message) = parser.unsupported_callback.take() {
+            return Err(Error::new(&message, "", 0, 0));
+        }
+        for callback in std::mem::take(&mut parser.pending_callbacks) {
+            collector.insert(Item::Callback(callback));
         }
 
         // Apply `IID_IFoo` variables to interfaces that lack `uuid` attributes.

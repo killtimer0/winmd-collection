@@ -16,6 +16,15 @@ enum RawItem {
     Const(usize, usize), // (file_pos, field_pos)
 }
 
+pub(crate) struct AssemblyIdentity<'a> {
+    pub name: &'a str,
+    pub version: u64,
+    pub flags: AssemblyFlags,
+    pub culture: &'a str,
+    pub public_key_or_token: &'a [u8],
+    pub hash_value: &'a [u8],
+}
+
 /// An individually-addressable item exposed by [`Index::iter_items`] and friends.
 #[derive(Copy, Clone, Debug)]
 pub enum Item<'a> {
@@ -25,14 +34,39 @@ pub enum Item<'a> {
 }
 
 impl Index {
-    pub(crate) fn reference_assembly(&self, namespace: &str, name: &str) -> Option<AssemblyRef<'_>> {
+    pub(crate) fn reference_assembly(
+        &self,
+        namespace: &str,
+        name: &str,
+    ) -> Option<AssemblyIdentity<'_>> {
+        if let Some(def) = self.get(namespace, name).next() {
+            let file = def.file();
+            if let Some(name) = file.assembly_name() {
+                return Some(AssemblyIdentity {
+                    name,
+                    version: file.u64(0, Assembly::TABLE, 1),
+                    flags: AssemblyFlags(file.usize(0, Assembly::TABLE, 2) as u32),
+                    culture: file.str(0, Assembly::TABLE, 5),
+                    public_key_or_token: file.blob(0, Assembly::TABLE, 3),
+                    hash_value: &[],
+                });
+            }
+        }
         for (file_pos, file) in self.files.iter().enumerate() {
             for pos in file.TypeRef() {
                 let ty = TypeRef::from_row(Row::new(self, file_pos, pos));
-                if ty.namespace() == namespace && ty.name() == name
+                if ty.namespace() == namespace
+                    && ty.name() == name
                     && let ResolutionScope::AssemblyRef(assembly) = ty.scope()
                 {
-                    return Some(assembly);
+                    return Some(AssemblyIdentity {
+                        name: assembly.name(),
+                        version: file.u64(assembly.pos(), AssemblyRef::TABLE, 0),
+                        flags: AssemblyFlags(assembly.usize(1) as u32),
+                        culture: assembly.str(4),
+                        public_key_or_token: assembly.public_key_or_token(),
+                        hash_value: file.blob(assembly.pos(), AssemblyRef::TABLE, 5),
+                    });
                 }
             }
         }

@@ -139,13 +139,15 @@ impl Interface {
                     let pname = write_ident(&p.name);
                     let pty = write_type(namespace, &p.ty);
                     let attrs = param_attrs_for_annotation(&p.annotation, &p.ty);
-                    quote! { #(#attrs)* #pname: #pty }
+                    let const_attr = const_string_attribute(&p.ty);
+                    quote! { #(#attrs)* #const_attr #pname: #pty }
                 });
                 let return_type = match &m.return_type {
                     metadata::Type::Void => quote! {},
                     ty => {
+                        let const_attr = const_string_attribute(ty);
                         let ty = write_type(namespace, ty);
-                        quote! { -> #ty }
+                        quote! { -> #const_attr #ty }
                     }
                 };
                 let special_attr = if m.is_propget || m.is_propput {

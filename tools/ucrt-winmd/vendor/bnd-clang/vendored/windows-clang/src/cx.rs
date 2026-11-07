@@ -522,7 +522,7 @@ impl Cursor {
     }
 
     pub fn enum_repr(&self) -> Type {
-        Type(unsafe { clang_getEnumDeclIntegerType(self.0) })
+        Type(unsafe { clang_getEnumDeclIntegerType(self.0) }, None)
     }
 
     pub fn is_scoped_enum(&self) -> bool {
@@ -594,7 +594,7 @@ impl Cursor {
     }
 
     pub fn ty(&self) -> Type {
-        Type(unsafe { clang_getCursorType(self.0) })
+        Type(unsafe { clang_getCursorType(self.0) }, Some(*self))
     }
 
     pub fn is_bit_field(&self) -> bool {
@@ -617,11 +617,14 @@ impl Cursor {
     }
 
     pub fn typedef_underlying_type(&self) -> Type {
-        Type(unsafe { clang_getTypedefDeclUnderlyingType(self.0) })
+        Type(
+            unsafe { clang_getTypedefDeclUnderlyingType(self.0) },
+            Some(*self),
+        )
     }
 
     pub fn result_type(&self) -> Type {
-        Type(unsafe { clang_getCursorResultType(self.0) })
+        Type(unsafe { clang_getCursorResultType(self.0) }, None)
     }
 
     pub fn language(&self) -> CXLanguageKind {
@@ -652,7 +655,7 @@ impl Cursor {
     }
 }
 
-pub struct Type(CXType);
+pub struct Type(CXType, Option<Cursor>);
 
 impl Type {
     pub fn kind(&self) -> CXTypeKind {
@@ -668,7 +671,7 @@ impl Type {
     }
 
     pub fn pointee_type(&self) -> Self {
-        Self(unsafe { clang_getPointeeType(self.0) })
+        Self(unsafe { clang_getPointeeType(self.0) }, self.1)
     }
 
     pub fn is_const(&self) -> bool {
@@ -676,11 +679,11 @@ impl Type {
     }
 
     pub fn underlying_type(&self) -> Self {
-        Self(unsafe { clang_Type_getNamedType(self.0) })
+        Self(unsafe { clang_Type_getNamedType(self.0) }, self.1)
     }
 
     pub fn canonical_type(&self) -> Self {
-        Self(unsafe { clang_getCanonicalType(self.0) })
+        Self(unsafe { clang_getCanonicalType(self.0) }, self.1)
     }
 
     /// Recovers closed WinRT generic arguments from canonical C++ specializations.
@@ -689,7 +692,10 @@ impl Type {
     }
 
     pub fn template_arg_type(&self, i: u32) -> Self {
-        Self(unsafe { clang_Type_getTemplateArgumentAsType(self.0, i) })
+        Self(
+            unsafe { clang_Type_getTemplateArgumentAsType(self.0, i) },
+            None,
+        )
     }
 
     /// Maps C++/WinRT ABI generic arguments like `HSTRING` and `IInspectable *` back to
@@ -713,7 +719,7 @@ impl Type {
     pub fn function_pointee(&self) -> Option<Self> {
         match self.kind() {
             // Function-type typedefs emit as callbacks like pointer typedefs.
-            CXType_FunctionProto | CXType_FunctionNoProto => Some(Self(self.0)),
+            CXType_FunctionProto | CXType_FunctionNoProto => Some(Self(self.0, self.1)),
             CXType_Pointer => {
                 let pointee = self.pointee_type();
                 if pointee.kind() == CXType_FunctionProto
@@ -728,7 +734,26 @@ impl Type {
     }
 
     pub fn fn_result_type(&self) -> Self {
-        Self(unsafe { clang_getResultType(self.0) })
+        Self(unsafe { clang_getResultType(self.0) }, None)
+    }
+
+    pub fn fn_calling_convention(&self, parser: &Parser<'_>) -> Option<CallingConvention> {
+        if let Some(cursor) = self.1 {
+            let tokens = parser
+                .tu
+                .tokenize(parser.tu.to_expansion_range(cursor.extent()));
+            if let Some(convention) =
+                detect_callback_calling_convention(&tokens, &cursor.name(), parser.macro_defs)
+            {
+                return Some(convention);
+            }
+        }
+        match unsafe { clang_getFunctionTypeCallingConv(self.0) } {
+            CXCallingConv_C => Some(CallingConvention::Cdecl),
+            CXCallingConv_X86StdCall => Some(CallingConvention::Stdcall),
+            CXCallingConv_X86FastCall => Some(CallingConvention::Fastcall),
+            _ => None,
+        }
     }
 
     pub fn fn_arg_types(&self) -> Vec<Self> {
@@ -737,12 +762,12 @@ impl Type {
             return vec![];
         }
         (0..count)
-            .map(|index| Self(unsafe { clang_getArgType(self.0, index as u32) }))
+            .map(|index| Self(unsafe { clang_getArgType(self.0, index as u32) }, None))
             .collect()
     }
 
     pub fn array_element_type(&self) -> Self {
-        Self(unsafe { clang_getArrayElementType(self.0) })
+        Self(unsafe { clang_getArrayElementType(self.0) }, self.1)
     }
 
     pub fn array_size(&self) -> usize {
@@ -961,7 +986,8 @@ impl Type {
                             .map_or(parser.namespace, String::as_str);
                         return metadata::Type::value_named(ns, &name);
                     }
-                    return metadata::Type::PtrMut(Box::new(metadata::Type::U8), 1);
+                    let function = pointee.canonical_type();
+                    return Callback::anonymous(&function, parser);
                 }
                 // Interface pointers have one implied level in metadata and RDL.
                 if pointee.is_interface() {
@@ -1010,10 +1036,7 @@ impl Type {
                 let element = self.array_element_type().to_type(parser);
                 metadata::Type::ArrayFixed(Box::new(element), 0)
             }
-            // Bare function types in value positions decay to opaque function pointers.
-            CXType_FunctionProto | CXType_FunctionNoProto => {
-                metadata::Type::PtrMut(Box::new(metadata::Type::Void), 1)
-            }
+            CXType_FunctionProto | CXType_FunctionNoProto => Callback::anonymous(self, parser),
             rest => {
                 // Late ABI projection fallback for out-of-scope WinRT references and kept
                 // interop entities.

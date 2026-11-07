@@ -5,6 +5,7 @@ import struct
 import argparse
 
 root = Path(__file__).resolve().parent
+config = json.loads((root / 'out/toolchain.json').read_text(encoding='utf-8'))
 parser = argparse.ArgumentParser(description='Optional Winlex integration checks; not required for generation.')
 parser.add_argument('--winlex', type=Path, required=True, help='Path to a compatible Winlex CLI executable')
 exe = parser.parse_args().winlex.resolve()
@@ -15,7 +16,7 @@ out.mkdir(exist_ok=True)
 
 
 def query(label, *args):
-    result = subprocess.run([str(exe), str(root / 'out/UCRT.winmd'), *args, '--json'],
+    result = subprocess.run([str(exe), str(root / 'out/UCRT.winmd'), config['win32_metadata'], *args, '--json'],
                             capture_output=True, text=True, encoding='utf-8', check=True)
     (out / f'{label}.json').write_text(result.stdout, encoding='utf-8')
     data = json.loads(result.stdout)
@@ -39,11 +40,34 @@ for name in ['malloc', 'free', 'fopen', 'qsort']:
     abi = next(a for a in result['attributes'] if a['name'] == 'NativeCallingConventionAttribute')
     assert abi['arguments'][0]['value'] == {'kind': 'string', 'value': 'C'}
     assert result['signature_flags'] & 15 == 0
+
+for arch in ['x86', 'x64', 'arm64']:
+    for name in ['atexit', 'at_quick_exit']:
+        result = query(f'{arch}-{name}', 'show', 'Ucrt.CRuntime.Apis.' + name, '--arch', arch)
+        callback = result['parameters'][0]['type']
+        assert callback['kind'] == 'named', (name, callback)
+        result = query(f'{arch}-{name}-callback', 'show',
+                       callback['namespace'] + '.' + callback['name'], '--arch', arch)
+        assert result['entity']['kind'] == 'delegate'
+        invoke = next(method for method in result['methods'] if method['entity']['name'] == 'Invoke')
+        assert invoke['parameters'] == [] and invoke['return_type'] == {'kind': 'primitive', 'name': 'Void'}
+        abi = next(a for a in result['attributes'] if a['name'] == 'UnmanagedFunctionPointerAttribute')
+        assert abi['arguments'][0]['value']['value']['decimal'] == '2'
+    for name, parameter, direction, optional in [
+        ('strtod', '_String', 'Input', False), ('strtod', '_EndPtr', 'Output', True),
+        ('_onexit', '_Func', 'Input', True), ('qsort', '_Base', 'InputOutput', False),
+        ('_makepath_s', '_Drive', 'Input', True),
+    ]:
+        result = query(f'{arch}-{name}-{parameter}', 'show', 'Ucrt.CRuntime.Apis.' + name, '--arch', arch)
+        param = next(p for p in result['parameters'] if p['name'] == parameter)
+        assert param['direction'] == direction and param['optional'] == optional, (name, param)
+        if name == 'strtod' and parameter == '_String':
+            assert param['type']['namespace'] == 'Windows.Win32.Foundation' and param['type']['name'] == 'PSTR'
+            assert any(a['name'] == 'ConstAttribute' for a in param['attributes'])
 query('EOF', 'show', 'EOF')
 query('EINVAL', 'show', 'EINVAL')
 
 # Compile assertions against this run's headers, not a previous SDK's layout.
-config = json.loads((root / 'out/toolchain.json').read_text(encoding='utf-8'))
 for arch, target in [('x86', 'i686-pc-windows-msvc'), ('x64', 'x86_64-pc-windows-msvc'),
                      ('arm64', 'aarch64-pc-windows-msvc')]:
     assertions = ['#include "../main.h"', '#include <limits.h>']
@@ -93,4 +117,4 @@ for filename in [f'{arch}/{name}' for arch in ['x86', 'x64', 'arm64']
     assert b'.lib\0' not in data.lower()
     assert b'api-ms-win-crt-' not in data
 
-print('PASS: declaration signatures/ABIs, constants, 12 native layout comparisons; zero ModuleRef/ImplMap in original and roundtrip')
+print('PASS: declaration signatures/ABIs, callbacks, explicit SAL and official strings, constants, 12 native layout comparisons; zero ModuleRef/ImplMap in original and roundtrip')

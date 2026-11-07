@@ -212,7 +212,8 @@ impl Fn {
                 let name = write_ident(&param.name);
                 let ty = write_type(namespace, &param.ty);
                 let attrs = param_attrs_for_annotation(&param.annotation, &param.ty);
-                quote! { #(#attrs)* #name: #ty }
+                let const_attr = const_string_attribute(&param.ty);
+                quote! { #(#attrs)* #const_attr #name: #ty }
             })
             .collect();
 
@@ -223,8 +224,9 @@ impl Fn {
         let return_type = match &self.return_type {
             metadata::Type::Void => quote! {},
             ty => {
+                let const_attr = const_string_attribute(ty);
                 let ty = write_type(namespace, ty);
-                quote! { -> #ty }
+                quote! { -> #const_attr #ty }
             }
         };
 

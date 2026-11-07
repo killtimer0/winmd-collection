@@ -3,6 +3,11 @@ mod into_stream;
 
 mod rec;
 
+#[cfg(test)]
+mod const_tests;
+#[cfg(test)]
+mod identity_tests;
+
 mod blobs;
 use blobs::*;
 
@@ -22,7 +27,7 @@ pub struct File {
 
     TypeRef: HashMap<String, HashMap<String, TypeRef>>,
     TypeSpec: HashMap<BlobId, TypeSpec>,
-    AssemblyRef: HashMap<String, AssemblyRef>,
+    AssemblyRef: HashMap<(StringId, [u16; 4], u32, BlobId, u32, u32), AssemblyRef>,
     ModuleRef: HashMap<String, ModuleRef>,
     MemberRef: HashMap<rec::MemberRef, MemberRef>,
 
@@ -101,21 +106,17 @@ impl File {
     }
 
     fn AssemblyRef(&mut self, assembly_name: &str) -> AssemblyRef {
-        if let Some(pos) = self.AssemblyRef.get(assembly_name) {
-            return *pos;
-        }
-
-        let pos = AssemblyRef(if assembly_name == "System" {
-            self.records.AssemblyRef.push_pos(rec::AssemblyRef {
+        let record = if assembly_name == "System" {
+            rec::AssemblyRef {
                 Name: self.strings.insert("mscorlib"),
                 MajorVersion: 4,
                 PublicKeyOrToken: self
                     .blobs
                     .insert(&[0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89]),
                 ..Default::default()
-            })
+            }
         } else {
-            self.records.AssemblyRef.push_pos(rec::AssemblyRef {
+            rec::AssemblyRef {
                 Name: self.strings.insert(assembly_name),
                 MajorVersion: 0xFF,
                 MinorVersion: 0xFF,
@@ -123,10 +124,31 @@ impl File {
                 RevisionNumber: 0xFF,
                 Flags: AssemblyFlags::WindowsRuntime,
                 ..Default::default()
-            })
-        });
+            }
+        };
+        self.insert_assembly_ref(record)
+    }
 
-        self.AssemblyRef.insert(assembly_name.to_string(), pos);
+    fn insert_assembly_ref(&mut self, record: rec::AssemblyRef) -> AssemblyRef {
+        let key = (
+            record.Name,
+            [
+                record.MajorVersion,
+                record.MinorVersion,
+                record.BuildNumber,
+                record.RevisionNumber,
+            ],
+            record.Flags.0,
+            record.PublicKeyOrToken,
+            record.Culture,
+            record.HashValue,
+        );
+        if let Some(pos) = self.AssemblyRef.get(&key) {
+            return *pos;
+        }
+        let pos = AssemblyRef(self.records.AssemblyRef.len() as u32);
+        self.AssemblyRef.insert(key, pos);
+        self.records.AssemblyRef.push(record);
         pos
     }
 
@@ -162,22 +184,11 @@ impl File {
                 ResolutionScope: ResolutionScope::TypeRef(enclosing),
             }))
         } else {
-            let assembly_name = self
-                .reference
-                .as_ref()
-                .and_then(|r| r.assembly_name(namespace, name))
-                .map(str::to_string);
-
-            let inherited_scope = if assembly_name.is_none() {
-                self.reference_assembly(namespace, name)
-            } else {
-                None
-            };
-            let scope = if let Some(assembly_name) = assembly_name {
-                ResolutionScope::AssemblyRef(self.AssemblyRef(&assembly_name))
-            } else if let Some(assembly) = inherited_scope {
+            let scope = if let Some(assembly) = self.reference_assembly(namespace, name) {
                 ResolutionScope::AssemblyRef(assembly)
-            } else if namespace == "System" {
+            } else if namespace == "System"
+                || (namespace == "System.Runtime.CompilerServices" && name == "IsConst")
+            {
                 ResolutionScope::AssemblyRef(self.AssemblyRef("System"))
             } else {
                 ResolutionScope::Module(Module(0))
@@ -199,27 +210,23 @@ impl File {
     }
 
     fn reference_assembly(&mut self, namespace: &str, name: &str) -> Option<AssemblyRef> {
-        use reader::AsRow;
-        let source = self.reference.as_ref()?.reference_assembly(namespace, name)?;
-        let assembly_name = source.str(3).to_string();
-        if let Some(assembly) = self.AssemblyRef.get(&assembly_name) {
-            return Some(*assembly);
-        }
-        let version = source.file().u64(source.pos(), reader::AssemblyRef::TABLE, 0);
+        let source = self
+            .reference
+            .as_ref()?
+            .reference_assembly(namespace, name)?;
+        let version = source.version;
         let record = rec::AssemblyRef {
             MajorVersion: version as u16,
             MinorVersion: (version >> 16) as u16,
             BuildNumber: (version >> 32) as u16,
             RevisionNumber: (version >> 48) as u16,
-            Flags: AssemblyFlags(source.usize(1) as u32),
-            PublicKeyOrToken: self.blobs.insert(source.file().blob(source.pos(), reader::AssemblyRef::TABLE, 2)),
-            Name: self.strings.insert(&assembly_name),
-            Culture: self.strings.insert(source.str(4)).0,
-            HashValue: self.blobs.insert(source.file().blob(source.pos(), reader::AssemblyRef::TABLE, 5)).0,
+            Flags: source.flags,
+            PublicKeyOrToken: self.blobs.insert(source.public_key_or_token),
+            Name: self.strings.insert(source.name),
+            Culture: self.strings.insert(source.culture).0,
+            HashValue: self.blobs.insert(source.hash_value).0,
         };
-        let assembly = AssemblyRef(self.records.AssemblyRef.push_pos(record));
-        self.AssemblyRef.insert(assembly_name, assembly);
-        Some(assembly)
+        Some(self.insert_assembly_ref(record))
     }
 
     pub fn TypeSpec(&mut self, namespace: &str, name: &str, generics: &[Type]) -> TypeSpec {
@@ -513,11 +520,10 @@ impl File {
             }
 
             Type::PtrConst(ty, pointers) => {
-                buffer.write_compressed(ELEMENT_TYPE_CMOD_REQD as usize);
                 let pos = self.TypeRef("System.Runtime.CompilerServices", "IsConst");
-                buffer.write_compressed(TypeDefOrRef::TypeRef(pos).encode() as usize);
-
                 for _ in 0..*pointers {
+                    buffer.write_compressed(ELEMENT_TYPE_CMOD_REQD as usize);
+                    buffer.write_compressed(TypeDefOrRef::TypeRef(pos).encode() as usize);
                     buffer.write_compressed(ELEMENT_TYPE_PTR as usize);
                 }
 

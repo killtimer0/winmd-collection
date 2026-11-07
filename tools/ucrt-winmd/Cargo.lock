@@ -24,16 +24,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ucrt-winmd"
-version = "0.1.0"
-dependencies = [
- "bnd-clang",
- "serde_json",
- "windows-metadata",
- "windows-rdl",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -235,6 +225,16 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys",
+]
+
+[[package]]
+name = "ucrt-winmd"
+version = "0.1.0"
+dependencies = [
+ "bnd-clang",
+ "serde_json",
+ "windows-metadata",
+ "windows-rdl",
 ]
 
 [[package]]

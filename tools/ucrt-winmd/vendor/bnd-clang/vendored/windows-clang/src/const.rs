@@ -86,12 +86,14 @@ impl Const {
         let value_ty = self.value.ty();
         let ty = self.ty.as_ref().unwrap_or(&value_ty);
         let value = write_typed_value(namespace, ty, &self.value);
+        let const_attr = const_string_attribute(ty);
         let ty = write_type(namespace, ty);
         match &self.value {
             metadata::Value::Utf8(_) => {
                 let attr = native_encoding_attr("ansi");
                 Ok(quote! {
                     #attr
+                    #const_attr
                     const #name: #ty = #value;
                 })
             }
@@ -99,10 +101,11 @@ impl Const {
                 let attr = native_encoding_attr("utf-16");
                 Ok(quote! {
                     #attr
+                    #const_attr
                     const #name: #ty = #value;
                 })
             }
-            _ => Ok(quote! { const #name: #ty = #value; }),
+            _ => Ok(quote! { #const_attr const #name: #ty = #value; }),
         }
     }
 }

@@ -56,7 +56,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     windows_rdl::reader()
         .input(out.join("rdl"))
-        .input("strings.rdl")
         .input("declarations.rdl")
         .reference(reference)
         .output(out.join("UCRT.untagged.winmd"))

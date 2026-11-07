@@ -18,7 +18,7 @@ dependencies.
   can be used; parsing always targets MSVC, not the MinGW ABI.
 - Python 3.10+ only for `-Check` or optional Winlex integration checks.
 - Official `Windows.Win32.winmd` from Microsoft.Windows.SDK.Win32Metadata,
-  providing the public native metadata attributes. The collection can prepare it
+  providing public native metadata attributes and string types. The collection can prepare it
   with `python scripts/prepare-metadata.py --source win32`.
 
 Clang and libclang must have matching versions and loadable runtime dependencies.
@@ -57,7 +57,8 @@ Outputs:
 - `out/{x86,x64,arm64}/winmd-inventory.tsv`: generated declaration inventories used
   by the AST audit and optional Winlex architecture checks.
 - `out/**/UCRT.roundtrip.winmd`: metadata regenerated through RDL.
-- `out/manifest.json`: tool versions, input and artifact hashes, and check results.
+- `out/manifest.json`: generation revision, tool versions, source/reference and
+  artifact hashes, and check results. Import preserves this generation provenance.
 - `out/*.log`: build and optional check logs.
 
 Manifests include local header paths; review them before sharing. Generated
@@ -95,6 +96,9 @@ alignments and field offsets for each supported architecture.
 - `Winlex.Metadata.NativeCallingConventionAttribute(String)` preserves C/system/
   fastcall independently from varargs. Consumers must read this custom attribute
   to recover the calling convention.
+- Anonymous function pointers use generated delegate definitions with an `Invoke`
+  signature and `UnmanagedFunctionPointerAttribute`. Variadic anonymous callbacks
+  are rejected rather than emitted with an incomplete signature.
 - Named semantic typedefs are preserved. `size_t`/`uintptr_t` use native unsigned
   integers and `intptr_t`/`ptrdiff_t` native signed integers. `rsize_t` references
   `size_t`; ordinary fixed-width integers are not normalized this way.
@@ -103,16 +107,25 @@ alignments and field offsets for each supported architecture.
   4=Arm64). No mask means all three. Consumers must select the requested
   architecture before resolving same-named variants or calculating layout.
 - Typedef, encoding, bitfield and architecture attributes reference the supplied
-  official Win32 metadata; their definitions are not copied into UCRT.
+  official Win32 metadata with its actual assembly identity; their definitions
+  are not copied into UCRT.
 - `Winlex.Metadata.NativeAlignmentAttribute(Int32 alignment)` records explicit
   native alignment in bytes, a positive power of two, independently of packing
   and field offsets. It is defined in UCRT and round-trips as `#[align(...)]`.
 - No-return markers use `System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute`
   and its system assembly identity from the official reference. System type
   definitions are not included in UCRT.
+- String wrappers reference official `Windows.Win32.Foundation.PSTR/PWSTR`;
+  read-only uses carry the official `ConstAttribute`. Nested pointers preserve
+  individual C qualifiers with externally scoped `IsConst` modifiers. SAL direction
+  does not change C constness.
 - Header inline functions are retained only as declarations. Unannotated
   declaration/callback parameters retain unspecified direction, including after
   round trips.
+- Explicit SAL directions and optionality are retained. Direct parameter counts
+  distinguish element counts from byte sizes. Unsupported expressions, indirect
+  counts and initialized/written lengths are diagnosed and omitted; supported
+  buffer extents remain available independently.
 - The baseline is public C headers plus Microsoft extensions and necessary
   VCRuntime support, not C++ STL or managed CRT. External variables are not emitted,
   macro values are not comprehensively evaluated, and alternate time/debug/Unicode
@@ -125,9 +138,10 @@ alignments and field offsets for each supported architecture.
 ```
 
 The destination must be new. The archive includes source, lockfile, tests, local
-dependencies and notices, but not generated outputs, local baselines, executables
-or Microsoft headers. See `RELEASE.md` for licensing and clean-environment release
-requirements.
+dependencies, notices and `source-provenance.json` identifying the packaged
+revision. Extracted builds do not require Git. It excludes generated outputs,
+local baselines, executables or Microsoft headers. See `RELEASE.md` for licensing
+and clean-environment release requirements.
 
 ## License and dependency maintenance
 

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
-use windows_metadata::{HasAttributes, Type, Value, reader::*};
+use windows_metadata::{AsRow, HasAttributes, Type, Value, reader::*};
 
 const OFFICIAL: &str = "Windows.Win32.Foundation.Metadata";
 
@@ -71,6 +71,16 @@ fn generated_attributes_resolve_to_their_owners_after_merging_and_roundtrip() {
                         if namespace == OFFICIAL {
                             assert_eq!(assembly.name(), "Windows.Win32.winmd");
                             let definition = official.expect(namespace, attribute.name());
+                            let owner = Assembly::from_row(Row {
+                                pos: 0,
+                                ..definition.to_row()
+                            });
+                            assert_eq!(assembly.usize(0), owner.usize(1));
+                            assert_eq!(assembly.usize(1), owner.usize(2));
+                            assert_eq!(assembly.str(4), owner.str(5));
+                            let mut key = owner.blob(3);
+                            let bytes: Vec<_> = (0..key.len()).map(|_| key.read_u8()).collect();
+                            assert_eq!(assembly.public_key_or_token(), bytes);
                             assert!(definition.methods().any(|method| method.name() == ".ctor"
                                 && method.signature(&[]).types == signature));
                         } else {
