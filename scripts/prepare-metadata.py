@@ -87,6 +87,8 @@ def import_ucrt(output):
     contents = {name: path.read_bytes() for name, path in inputs.items()}
     manifest_data = (output / "manifest.json").read_bytes()
     manifest = json.loads(manifest_data)
+    if not manifest.get("generator_revision") or not manifest.get("source_inputs") or not manifest.get("metadata_references"):
+        raise ValueError("UCRT generator manifest is missing generation provenance; regenerate before importing")
     outputs = [entry for entry in manifest["artifacts"] if entry["path"].replace("\\", "/") == "out/UCRT.winmd"]
     if len(outputs) != 1:
         raise ValueError("UCRT generator manifest must identify one merged output")
@@ -98,7 +100,9 @@ def import_ucrt(output):
         raise ValueError("Run the UCRT generator with -Check before importing")
     toolchain = manifest["toolchain"]
     source.update(
-        generator_revision=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+        generator_revision=manifest["generator_revision"],
+        source_inputs=manifest["source_inputs"],
+        metadata_references=manifest["metadata_references"],
         sdk_version=Path(toolchain["sdk_include"]).name,
         msvc_version=Path(toolchain["msvc_include"]).parent.name,
         generation_manifest_sha256=digest(manifest_data),

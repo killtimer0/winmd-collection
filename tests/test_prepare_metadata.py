@@ -67,7 +67,7 @@ class PreparationTests(unittest.TestCase):
                 self.assertEqual(list((root / "artifacts").glob("*.winmd")), [output])
                 self.assertEqual(list((root / "tmp").iterdir()), [])
 
-    def test_generated_import_uses_verified_manifest_not_other_machine_hash(self):
+    def test_generated_import_preserves_generation_provenance_not_importing_head(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             output = root / "generated"
@@ -79,19 +79,35 @@ class PreparationTests(unittest.TestCase):
             data = b"generated metadata"
             (output / "UCRT.winmd").write_bytes(data)
             manifest = {"artifacts": [{"path": "out/UCRT.winmd", "sha256": hashlib.sha256(data).hexdigest()}],
+                        "generator_revision": "generation-revision",
+                        "source_inputs": [{"path": "main.h", "sha256": prepare.digest(b"old source")}],
+                        "metadata_references": [{"path": "original/Windows.Win32.winmd", "sha256": prepare.digest(b"reference")}],
                         "generation": [{"architecture": arch} for arch in ("x86", "x64", "arm64")],
                         "checks": {"contracts": "passed", "ast_audit_and_clippy": "passed"},
                         "toolchain": {"sdk_include": "SDK/10.0.26100.0", "msvc_include": "MSVC/14.51.36231/include"}}
             (output / "manifest.json").write_text(json.dumps(manifest))
-            with patch.object(prepare, "ROOT", root), patch.object(prepare.subprocess, "check_output", return_value="revision\n"):
+            (root / "tools/ucrt-winmd/main.h").write_bytes(b"new source")
+            with patch.object(prepare, "ROOT", root), patch.object(prepare.subprocess, "check_output", side_effect=AssertionError("Import must not query current HEAD")):
                 prepare.import_ucrt(output)
                 record = json.loads((root / "sources/ucrt.json").read_text())
                 self.assertEqual(record["files"]["UCRT.winmd"], hashlib.sha256(data).hexdigest())
-                self.assertEqual(record["generator_revision"], "revision")
+                self.assertEqual(record["generator_revision"], "generation-revision")
                 self.assertEqual(record["sdk_version"], "10.0.26100.0")
                 self.assertEqual(record["generation_manifest_sha256"], hashlib.sha256((output / "manifest.json").read_bytes()).hexdigest())
                 self.assertEqual((root / "artifacts/licenses/ucrt/generator-LICENSE").read_bytes(), b"license")
+                self.assertEqual(record["source_inputs"], manifest["source_inputs"])
+                self.assertEqual(record["metadata_references"], manifest["metadata_references"])
+                self.assertEqual(set(record["files"]), {"UCRT.winmd", "licenses/ucrt/generator-LICENSE"})
                 self.assertFalse((root / "artifacts/manifest.json").exists())
+                before = (root / "sources/ucrt.json").read_bytes()
+                for name in ("generator_revision", "source_inputs", "metadata_references"):
+                    incomplete = dict(manifest)
+                    del incomplete[name]
+                    (output / "manifest.json").write_text(json.dumps(incomplete))
+                    with self.subTest(missing=name), self.assertRaisesRegex(ValueError, "missing generation provenance"):
+                        prepare.import_ucrt(output)
+                    self.assertEqual((root / "sources/ucrt.json").read_bytes(), before)
+                (output / "manifest.json").write_text(json.dumps(manifest))
                 (output / "UCRT.winmd").write_bytes(b"corrupt")
                 with self.assertRaises(ValueError): prepare.import_ucrt(output)
                 self.assertEqual((root / "artifacts/UCRT.winmd").read_bytes(), data)

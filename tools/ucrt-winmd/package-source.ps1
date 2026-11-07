@@ -4,11 +4,15 @@ param([string]$Destination = (Join-Path $PSScriptRoot 'out/ucrt-winmd-source.zip
 
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/scripts/toolchain.ps1"
+$provenance = @{ generator_revision = (Get-CrtSourceRevision $PSScriptRoot) } | ConvertTo-Json
 $Destination = [IO.Path]::GetFullPath($Destination)
 New-Item (Split-Path $Destination) -ItemType Directory -Force | Out-Null
 $stream = [IO.File]::Open($Destination, [IO.FileMode]::CreateNew)
 $archive = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Create)
 try {
+    $entry = $archive.CreateEntry('source-provenance.json')
+    $writer = [IO.StreamWriter]::new($entry.Open(), [Text.UTF8Encoding]::new($false))
+    try { $writer.WriteLine($provenance) } finally { $writer.Dispose() }
     foreach ($file in Get-CrtSourceFiles $PSScriptRoot) {
         $relative = [IO.Path]::GetRelativePath($PSScriptRoot, $file.FullName).Replace('\', '/')
         [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $file.FullName, $relative) | Out-Null

@@ -148,6 +148,10 @@ def audit(arch, config):
                               'unresolved gaps are intentionally retained, not silently allowlisted']}
     (out / 'coverage.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     print(arch, report['counts'], report['status_counts'])
+    failures = [row for row in shape_checks if row['status'] in {
+        'parameter-count-or-varargs-mismatch', 'field-name-or-order-mismatch'}]
+    if failures:
+        raise ValueError(f"{arch}: {len(failures)} WinMD shape mismatch(es); see {out / 'coverage.json'}")
 
 
 if __name__ == '__main__':

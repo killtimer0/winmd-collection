@@ -93,7 +93,21 @@ function Invoke-CrtStep([string]$Name, [string]$Executable, [string[]]$Arguments
     Get-Content -LiteralPath $log | Where-Object { $_ -match '(?i)\bwarning\b|\berror\b' } | Write-Host
 }
 
+function Get-CrtSourceRevision([string]$Root) {
+    $record = Join-Path $Root 'source-provenance.json'
+    if (Test-Path -LiteralPath $record -PathType Leaf) {
+        $revision = (Get-Content -LiteralPath $record -Raw | ConvertFrom-Json).generator_revision
+    }
+    else {
+        $revision = & git -C $Root rev-parse --verify HEAD
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot determine generator revision.' }
+    }
+    if ($revision -notmatch '^(?:[0-9a-f]{40}|[0-9a-f]{64})$') { throw 'Invalid generator revision in source provenance.' }
+    return $revision
+}
+
 function Write-CrtManifest([string]$Root, $Toolchain, [bool]$Checked, [bool]$WinlexChecked) {
+    $revision = Get-CrtSourceRevision $Root
     $inputs = @()
     foreach ($file in Get-CrtSourceFiles $Root) {
         $inputs += [ordered]@{ path = [IO.Path]::GetRelativePath($Root, $file.FullName); sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
@@ -115,6 +129,7 @@ function Write-CrtManifest([string]$Root, $Toolchain, [bool]$Checked, [bool]$Win
     $generation = @('x86', 'x64', 'arm64') | ForEach-Object { Get-Content "out/$_/generation.json" -Raw | ConvertFrom-Json }
     [ordered]@{
         schema_version = 1
+        generator_revision = $revision.Trim()
         toolchain = $Toolchain
         metadata_references = @([ordered]@{
             path = $Toolchain.win32_metadata
@@ -129,7 +144,7 @@ function Write-CrtManifest([string]$Root, $Toolchain, [bool]$Checked, [bool]$Win
 }
 
 function Get-CrtSourceFiles([string]$Root) {
-    $paths = @('Cargo.toml', 'Cargo.lock', '.gitignore', 'LICENSE', 'README.md', 'THIRD-PARTY-NOTICES.md', 'RELEASE.md', 'main.h', 'strings.rdl', 'declarations.rdl', 'build.ps1', 'package-source.ps1', 'audit.py', 'verify.py', 'verify_multiarch.py', 'src', 'scripts', 'tests', 'vendor')
+    $paths = @('Cargo.toml', 'Cargo.lock', '.gitignore', 'LICENSE', 'README.md', 'THIRD-PARTY-NOTICES.md', 'RELEASE.md', 'main.h', 'declarations.rdl', 'build.ps1', 'package-source.ps1', 'audit.py', 'verify.py', 'verify_multiarch.py', 'src', 'scripts', 'tests', 'vendor')
     foreach ($path in $paths) {
         Get-ChildItem -LiteralPath (Join-Path $Root $path) -File -Recurse -Force | Sort-Object FullName
     }
