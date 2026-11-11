@@ -30,7 +30,7 @@ for name, fixed in [('printf', 1), ('fprintf', 2), ('sprintf', 2), ('snprintf', 
     result = query(name, 'show', name)
     assert len(result['parameters']) == fixed
     assert result['signature_flags'] & 15 == (0 if name.startswith('v') else 5)
-    assert result['return_type'] == {'kind': 'primitive', 'name': 'I32'}
+    assert result['return_type'] == {'kind': 'primitive', 'name': 'int32'}
     assert result['import'] is None
     abi = next(a for a in result['attributes'] if a['name'] == 'NativeCallingConventionAttribute')
     assert abi['arguments'][0]['value'] == {'kind': 'string', 'value': 'C'}
@@ -54,7 +54,7 @@ for arch in ['x86', 'x64', 'arm64']:
                        callback['namespace'] + '.' + callback['name'], '--arch', arch)
         assert result['entity']['kind'] == 'delegate'
         invoke = next(method for method in result['methods'] if method['entity']['name'] == 'Invoke')
-        assert invoke['parameters'] == [] and invoke['return_type'] == {'kind': 'primitive', 'name': 'Void'}
+        assert invoke['parameters'] == [] and invoke['return_type'] == {'kind': 'primitive', 'name': 'void'}
         abi = next(a for a in result['attributes'] if a['name'] == 'UnmanagedFunctionPointerAttribute')
         assert abi['arguments'][0]['value']['value']['decimal'] == '2'
     for name, parameter, direction, optional in [
