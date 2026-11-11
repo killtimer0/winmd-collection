@@ -1,14 +1,18 @@
 use super::*;
 
-/// Add symbol -> DLL entries from an import library without overwriting existing ones.
+/// Add symbol -> DLL entries from an import library targeting `machine` without
+/// overwriting existing ones.
 pub(crate) fn extend_libraries(
     map: &mut HashMap<String, String>,
     path: &Path,
+    machine: u16,
 ) -> Result<(), Error> {
     let source = path.to_string_lossy();
     let bytes = std::fs::read(path).map_err(|_| Error::new("invalid input", &source, 0, 0))?;
     for import in implib::read(&bytes)? {
-        map.entry(import.symbol).or_insert(import.dll);
+        if import.machine == machine {
+            map.entry(import.export).or_insert(import.dll);
+        }
     }
     Ok(())
 }

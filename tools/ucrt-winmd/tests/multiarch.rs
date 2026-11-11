@@ -78,7 +78,9 @@ fn add_type(
         );
     }
     for method in ty.methods().filter(|m| supported(*m, arch)) {
-        assert!(method.impl_map().is_none());
+        let import = method
+            .impl_map()
+            .map(|m| (m.import_scope().name(), m.import_name()));
         let sig = method.signature(&[]);
         let params: Vec<_> = method
             .params()
@@ -88,7 +90,7 @@ fn add_type(
             snapshot,
             format!("method:{name}.{}", method.name()),
             format!(
-                "{:?}|{:?}|{}|{:?}|{:?}|{:?}|{params:?}",
+                "{:?}|{:?}|{}|{:?}|{:?}|{:?}|{import:?}|{params:?}",
                 sig.return_type,
                 sig.types,
                 sig.flags.0,

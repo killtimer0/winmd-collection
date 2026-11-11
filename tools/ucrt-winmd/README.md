@@ -1,8 +1,9 @@
-# UCRT declaration metadata generator (experimental)
+# UCRT query metadata generator (experimental)
 
 Generate one query-oriented WinMD for x86, x64 and ARM64 from Microsoft UCRT
-headers, with required VCRuntime support definitions. No import or static library
-is required.
+headers and the matching SDK import libraries, with required VCRuntime support
+definitions. Functions exported by the import libraries become native imports;
+header inline helpers and symbols without an import entry stay declarations.
 
 This is an independent Cargo workspace with its own lockfile and local patched
 dependencies.
@@ -13,6 +14,9 @@ dependencies.
 - Rust 1.95+ and Cargo, with the MSVC host toolchain and its linker available.
   Cargo resolves the Rust dependencies using the included `Cargo.lock`.
 - Visual Studio or Build Tools with MSVC C++ tools and a Windows 10/11 SDK.
+- SDK import libraries under `Lib/<version>/ucrt/{x86,x64,arm64}/ucrt.lib` from
+  the same SDK version as the selected includes. VCRuntime has no import library
+  entries, so its functions remain declarations.
 - Matching 64-bit Clang and libclang 18+; `clang.exe` on PATH and `libclang.dll`
   beside it, or explicit paths as shown below. LLVM and MSYS2 Clang distributions
   can be used; parsing always targets MSVC, not the MinGW ABI.
@@ -40,11 +44,14 @@ To select particular versions or nonstandard installations:
 ```powershell
 ./build.ps1 -Win32MetadataPath 'D:/Metadata/Windows.Win32.winmd' `
   -SdkIncludePath 'D:/SDK/Include/10.0.x.y' `
+  -SdkLibPath 'D:/SDK/Lib/10.0.x.y' `
   -MsvcIncludePath 'D:/VS/VC/Tools/MSVC/14.x.y/include' `
   -ClangPath 'D:/LLVM/bin/clang.exe' -LibClangPath 'D:/LLVM/bin'
 ```
 
 `SdkIncludePath` is the versioned directory containing `ucrt/` and `shared/`.
+`SdkLibPath` defaults to the matching `Lib` directory and must contain
+`ucrt/<arch>/ucrt.lib` for all three architectures.
 `MsvcIncludePath` contains `vcruntime.h` and `vadefs.h`. Without overrides, SDK
 discovery uses `WindowsSdkDir` or the standard Windows Kits directory; MSVC
 discovery uses `VCToolsInstallDir` or Visual Studio's `vswhere`. The newest
@@ -54,8 +61,9 @@ Outputs:
 
 - `out/UCRT.winmd`: combined x86/x64/ARM64 query metadata.
 - `out/{x86,x64,arm64}/UCRT.winmd`: explicitly architecture-tagged baselines.
-- `out/{x86,x64,arm64}/winmd-inventory.tsv`: generated declaration inventories used
-  by the AST audit and optional Winlex architecture checks.
+- `out/{x86,x64,arm64}/winmd-inventory.tsv`: generated function inventories,
+  including import scope and entry point, used by the AST audit and optional
+  Winlex architecture checks.
 - `out/**/UCRT.roundtrip.winmd`: metadata regenerated through RDL.
 - `out/manifest.json`: generation revision, tool versions, source/reference and
   artifact hashes, and check results. Import preserves this generation provenance.
@@ -90,12 +98,18 @@ alignments and field offsets for each supported architecture.
 
 ## Metadata conventions and coverage
 
-- Free functions are native, unmanaged forward declarations without PInvokeImpl,
-  ImplMap, ModuleRef or method bodies. Use the output for declaration and layout
-  queries, not for execution or linking.
-- `Winlex.Metadata.NativeCallingConventionAttribute(String)` preserves C/system/
-  fastcall independently from varargs. Consumers must read this custom attribute
-  to recover the calling convention.
+- Free functions are native, unmanaged members without method bodies. Functions
+  with a matching entry in `ucrt.lib` carry PInvokeImpl and an ImplMap whose scope
+  is the import library's API set (for example
+  `api-ms-win-crt-heap-l1-1-0.dll`) and whose entry point is the undecorated
+  export name. Header inline helpers and symbols without an import entry (for
+  example `printf`) are declarations with ECMA-335
+  Native | Unmanaged | ForwardRef (0x15) and no ImplMap. Use imports for P/Invoke
+  scenarios; declarations carry signatures only.
+- `Winlex.Metadata.NativeCallingConventionAttribute(String)` preserves
+  declaration C/system/fastcall independently from varargs. Imports record
+  `__cdecl` through the ImplMap calling-convention flag instead. Consumers must
+  read the form that matches the method's ImplMap presence.
 - Anonymous function pointers use generated delegate definitions with an `Invoke`
   signature and `UnmanagedFunctionPointerAttribute`. Variadic anonymous callbacks
   are rejected rather than emitted with an incomplete signature.
@@ -130,6 +144,9 @@ alignments and field offsets for each supported architecture.
   VCRuntime support, not C++ STL or managed CRT. External variables are not emitted,
   macro values are not comprehensively evaluated, and alternate time/debug/Unicode
   macro configurations are not combined.
+- Legacy `oldnames.lib` aliases are not consulted, so POSIX names such as `access`
+  and `strdup` remain declarations even though linking resolves them to `_access`
+  and `_strdup`.
 
 ## Source packaging
 

@@ -22,6 +22,11 @@ Changes in `vendored/windows-clang/src/`:
   filtering continues to use public symbol names. `scope.rs` builds reachability
   edges from public names rather than internal collector keys.
 - `lib.rs`: retain free function definitions as declarations without their bodies.
+- `fn.rs`: emit `#[declaration]` when no import library resolves a function
+  instead of writing an empty `#[library("")]` placeholder. `lib.rs` and
+  `scope.rs` read SDK import libraries keyed by DLL export name and target
+  machine, so decorated x86 symbols match their header names and ARM64EC entries
+  are ignored.
 - `callback.rs`: mark unannotated parameter directions as unspecified for the
   patched RDL encoder instead of inferring output from mutable pointer shape.
 - RDL formatting and directory enumeration failures stop generation rather than

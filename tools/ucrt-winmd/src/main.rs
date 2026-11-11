@@ -32,6 +32,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     std::fs::create_dir_all(&out)?;
     let mut args = clang_args(&config)?;
     args.push(format!("--target={target}"));
+    let machine = match arch.as_str() {
+        "x86" => 0x14c,
+        "x64" => 0x8664,
+        _ => 0xaa64,
+    };
+    let import_library = config["ucrt_import_libraries"][arch.as_str()]
+        .as_str()
+        .ok_or("toolchain ucrt_import_libraries is required")?;
     let clang_version = windows_clang::clang_version()?;
     println!("{clang_version}");
     if out.join("rdl").exists() {
@@ -45,13 +53,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         .scope_headers(["vadefs.h", "vcruntime.h", "vcruntime_startup.h", "stddef.h"])
         .namespace("Ucrt.CRuntime")
         .library("")
+        .import_library(import_library, machine)?
         .output(out.join("rdl"))
         .write_by_header()?;
     for entry in std::fs::read_dir(out.join("rdl"))? {
         let path = entry?.path();
         if path.extension().is_some_and(|extension| extension == "rdl") {
             let source = std::fs::read_to_string(&path)?;
-            std::fs::write(&path, source.replace("#[library(\"\")]", "#[declaration]"))?;
+            if source.contains("#[library(\"\")]") {
+                return Err(format!("{}: function has no import library", path.display()).into());
+            }
         }
     }
     windows_rdl::reader()
@@ -75,7 +86,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     std::fs::write(
         out.join("generation.json"),
         serde_json::to_vec_pretty(&serde_json::json!({
-            "architecture": arch, "target": target, "libclang_version": clang_version,
+            "architecture": arch,
+            "target": target,
+            "import_library": import_library,
+            "libclang_version": clang_version,
         }))?,
     )?;
     Ok(())
@@ -105,25 +119,33 @@ fn roundtrip(out: &std::path::Path, reference: &std::path::Path) -> Result<(), B
 fn write_inventory(out: &std::path::Path) -> Result<(), Box<dyn Error>> {
     let index = windows_metadata::reader::Index::read(out.join("UCRT.winmd"))
         .ok_or("failed to read UCRT metadata for inventory")?;
-    let mut inventory = String::from("kind\towner\tname\tparameter_count\tvariadic\tfields\n");
+    let mut inventory = String::from(
+        "kind\towner\tname\tparameter_count\tvariadic\timport_scope\timport_name\tfields\n",
+    );
     for ty in index.types().filter(|t| t.namespace() == "Ucrt.CRuntime") {
         let mut fields: Vec<_> = ty.fields().map(|f| f.name()).collect();
         if ty.name() == "Apis" {
             fields.sort();
         }
         inventory.push_str(&format!(
-            "type\t\t{}\t\t\t{}\n",
+            "type\t\t{}\t\t\t\t\t{}\n",
             ty.name(),
             fields.join(",")
         ));
         for method in ty.methods() {
             let sig = method.signature(&[]);
+            let (scope, import) = match method.impl_map() {
+                Some(map) => (map.import_scope().name(), map.import_name()),
+                None => ("", ""),
+            };
             inventory.push_str(&format!(
-                "method\t{}\t{}\t{}\t{}\t\n",
+                "method\t{}\t{}\t{}\t{}\t{}\t{}\t\n",
                 ty.name(),
                 method.name(),
                 sig.types.len(),
-                (sig.flags.0 & 15) == 5
+                (sig.flags.0 & 15) == 5,
+                scope,
+                import
             ));
         }
     }
@@ -158,16 +180,16 @@ mod tests {
         let mut rows: Vec<_> = inventory.lines().collect();
         assert_eq!(
             rows.remove(0),
-            "kind\towner\tname\tparameter_count\tvariadic\tfields"
+            "kind\towner\tname\tparameter_count\tvariadic\timport_scope\timport_name\tfields"
         );
         rows.sort();
         assert_eq!(
             rows,
             vec![
-                "method\tApis\tprint\t1\ttrue\t",
-                "method\tApis\trelease\t1\tfalse\t",
-                "type\t\tApis\t\t\t",
-                "type\t\tRecord\t\t\tz,a",
+                "method\tApis\tprint\t1\ttrue\t\t\t",
+                "method\tApis\trelease\t1\tfalse\t\t\t",
+                "type\t\tApis\t\t\t\t\t",
+                "type\t\tRecord\t\t\t\t\tz,a",
             ]
         );
     }

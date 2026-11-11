@@ -227,26 +227,50 @@ fn nested_record_references_keep_parent_scopes_through_merge_and_roundtrip() {
 }
 
 #[test]
-fn generated_crt_contains_only_declarations() {
+fn generated_crt_mixes_imports_and_declarations() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("out/UCRT.winmd");
     let index = Index::read(path).unwrap();
     let apis = index.expect("Ucrt.CRuntime", "Apis");
-    for name in ["printf", "malloc", "free", "fopen", "qsort"] {
-        assert!(
-            apis.methods().any(|m| m.name() == name),
-            "missing declaration: {name}"
-        );
+    for (name, dll) in [
+        ("malloc", "api-ms-win-crt-heap-l1-1-0.dll"),
+        ("free", "api-ms-win-crt-heap-l1-1-0.dll"),
+        ("fopen", "api-ms-win-crt-stdio-l1-1-0.dll"),
+        ("qsort", "api-ms-win-crt-utility-l1-1-0.dll"),
+    ] {
+        for method in apis.methods().filter(|m| m.name() == name) {
+            let map = method
+                .impl_map()
+                .unwrap_or_else(|| panic!("missing import: {name}"));
+            assert_eq!(map.import_scope().name(), dll, "{name}");
+            assert_eq!(map.import_name(), name);
+            assert!(method.flags().contains(MethodAttributes::PInvokeImpl));
+        }
     }
     for method in apis.methods() {
-        assert!(method.impl_map().is_none(), "{}", method.name());
-        assert!(!method.flags().contains(MethodAttributes::PInvokeImpl));
+        let convention = || {
+            method.attributes().any(|a| {
+                a.namespace() == "Winlex.Metadata" && a.name() == "NativeCallingConventionAttribute"
+            })
+        };
+        match method.impl_map() {
+            Some(map) => {
+                // Import libraries record export names, never x86 decorations or
+                // ARM64EC markers.
+                assert_eq!(map.import_name(), method.name());
+                assert!(map.import_scope().name().starts_with("api-ms-win-crt-"));
+                assert!(method.flags().contains(MethodAttributes::PInvokeImpl));
+                assert!(!convention(), "{}", method.name());
+            }
+            None => {
+                assert_eq!(method.impl_flags().0, 0x15, "{}", method.name());
+                assert!(!method.flags().contains(MethodAttributes::PInvokeImpl));
+                assert!(convention(), "{}", method.name());
+            }
+        }
+    }
+    for method in apis.methods().filter(|m| m.name() == "printf") {
+        assert!(method.impl_map().is_none());
         assert_eq!(method.impl_flags().0, 0x15);
-        assert!(
-            method
-                .attributes()
-                .any(|a| a.namespace() == "Winlex.Metadata"
-                    && a.name() == "NativeCallingConventionAttribute")
-        );
     }
 }
 

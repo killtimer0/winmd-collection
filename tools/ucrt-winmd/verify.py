@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 import subprocess
 import struct
 import argparse
@@ -34,11 +35,14 @@ for name, fixed in [('printf', 1), ('fprintf', 2), ('sprintf', 2), ('snprintf', 
     abi = next(a for a in result['attributes'] if a['name'] == 'NativeCallingConventionAttribute')
     assert abi['arguments'][0]['value'] == {'kind': 'string', 'value': 'C'}
 
-for name in ['malloc', 'free', 'fopen', 'qsort']:
+for name, dll in [('malloc', 'api-ms-win-crt-heap-l1-1-0.dll'),
+                  ('free', 'api-ms-win-crt-heap-l1-1-0.dll'),
+                  ('fopen', 'api-ms-win-crt-stdio-l1-1-0.dll'),
+                  ('qsort', 'api-ms-win-crt-utility-l1-1-0.dll')]:
     result = query(name, 'show', name)
-    assert result['import'] is None
-    abi = next(a for a in result['attributes'] if a['name'] == 'NativeCallingConventionAttribute')
-    assert abi['arguments'][0]['value'] == {'kind': 'string', 'value': 'C'}
+    assert result['import'], (name, result['import'])
+    assert result['import']['dll'] == dll, (name, result['import'])
+    assert result['import']['entry_point'] == name, (name, result['import'])
     assert result['signature_flags'] & 15 == 0
 
 for arch in ['x86', 'x64', 'arm64']:
@@ -109,12 +113,13 @@ for filename in [f'{arch}/{name}' for arch in ['x86', 'x64', 'arm64']
                 if valid & (1 << table):
                     counts[table] = struct.unpack_from('<I', data, row_pos)[0]
                     row_pos += 4
-            assert counts.get(26, 0) == 0, ('ModuleRef', filename)
-            assert counts.get(28, 0) == 0, ('ImplMap', filename)
+            assert counts.get(26, 0) == 14, ('ModuleRef', filename)
+            assert counts.get(28, 0) >= 1300, ('ImplMap', filename)
             break
     else:
         raise AssertionError('missing metadata tables')
     assert b'.lib\0' not in data.lower()
-    assert b'api-ms-win-crt-' not in data
+    apisets = set(re.findall(rb'api-ms-win-crt-[a-z0-9-]+\.dll', data))
+    assert len(apisets) == 14, (filename, apisets)
 
-print('PASS: declaration signatures/ABIs, callbacks, explicit SAL and official strings, constants, 12 native layout comparisons; zero ModuleRef/ImplMap in original and roundtrip')
+print('PASS: declaration and import signatures/ABIs, callbacks, explicit SAL and official strings, constants, 12 native layout comparisons; 14 ModuleRef and import entries in original and roundtrip')

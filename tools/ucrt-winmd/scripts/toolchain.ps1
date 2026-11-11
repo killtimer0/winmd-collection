@@ -37,8 +37,30 @@ function Get-CrtSdkInclude([string]$IncludePath) {
     return Resolve-CrtInclude $IncludePath @('ucrt/stdio.h', 'shared/sdkddkver.h') 'SdkIncludePath'
 }
 
+# Resolves the SDK import libraries for every generated architecture.
+function Get-CrtSdkLib([string]$IncludePath, [string]$LibPath) {
+    if (-not $LibPath) {
+        $version = Split-Path $IncludePath -Leaf
+        $kits = Split-Path (Split-Path $IncludePath)
+        $LibPath = Join-Path (Join-Path $kits 'Lib') $version
+    }
+    if (-not (Test-Path -LiteralPath $LibPath -PathType Container)) {
+        throw "Library directory not found. Specify -SdkLibPath."
+    }
+    $resolved = (Resolve-Path -LiteralPath $LibPath).ProviderPath
+    $libraries = [ordered]@{}
+    foreach ($arch in @('x86', 'x64', 'arm64')) {
+        $file = Join-Path $resolved "ucrt/$arch/ucrt.lib"
+        if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+            throw "Missing ucrt/$arch/ucrt.lib under $resolved. Check -SdkLibPath."
+        }
+        $libraries[$arch] = $file
+    }
+    return $libraries
+}
+
 function Get-CrtToolchain {
-    param([string]$SdkIncludePath, [string]$MsvcIncludePath, [string]$ClangPath, [string]$LibClangPath)
+    param([string]$SdkIncludePath, [string]$SdkLibPath, [string]$MsvcIncludePath, [string]$ClangPath, [string]$LibClangPath)
     if (-not $IsWindows) { throw 'This generator currently requires a Windows host.' }
     $cargo = Resolve-CrtExecutable 'cargo'
     $rustc = Resolve-CrtExecutable 'rustc'
@@ -55,6 +77,7 @@ function Get-CrtToolchain {
         }
     }
     $sdk = Get-CrtSdkInclude $SdkIncludePath
+    $libraries = Get-CrtSdkLib $sdk $SdkLibPath
     $msvc = Resolve-CrtInclude $MsvcIncludePath @('vcruntime.h', 'vadefs.h', 'vcruntime_startup.h') 'MsvcIncludePath'
     $clang = Resolve-CrtExecutable $ClangPath
     $clangVersion = & $clang --version
@@ -71,6 +94,7 @@ function Get-CrtToolchain {
         powershell_version = $PSVersionTable.PSVersion.ToString()
         sdk_include = $sdk
         msvc_include = $msvc
+        ucrt_import_libraries = $libraries
         clang_path = $clang
         libclang_path = $libclang
         clang_version = $clangVersion[0]
@@ -118,6 +142,10 @@ function Write-CrtManifest([string]$Root, $Toolchain, [bool]$Checked, [bool]$Win
             $headers += [ordered]@{ path = $file.FullName; sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
         }
     }
+    $libraries = @()
+    foreach ($path in $Toolchain.ucrt_import_libraries.Values | Sort-Object) {
+        $libraries += [ordered]@{ path = $path; sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() }
+    }
     $artifacts = @()
     foreach ($arch in @('x86', 'x64', 'arm64', '')) {
         foreach ($name in @('UCRT.winmd', 'UCRT.roundtrip.winmd')) {
@@ -139,6 +167,7 @@ function Write-CrtManifest([string]$Root, $Toolchain, [bool]$Checked, [bool]$Win
         checks = @{ contracts = $(if ($Checked -or $WinlexChecked) { 'passed' } else { 'not-run' }); ast_audit_and_clippy = $(if ($Checked) { 'passed' } else { 'not-run' }); winlex = $(if ($WinlexChecked) { 'passed' } else { 'not-run' }) }
         source_inputs = $inputs
         installed_headers = $headers
+        import_libraries = $libraries
         artifacts = $artifacts
     } | ConvertTo-Json -Depth 10 | Set-Content out/manifest.json -Encoding utf8NoBOM
 }

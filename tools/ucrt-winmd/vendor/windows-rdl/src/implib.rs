@@ -2,10 +2,13 @@
 
 use crate::Error;
 
-/// One short-import symbol and its implementing DLL.
+/// One short-import symbol, its DLL export name and the architecture it targets.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Import {
-    pub symbol: String,
+    /// Target machine (`IMAGE_FILE_MACHINE_*`); ARM64 libraries also carry ARM64EC.
+    pub machine: u16,
+    /// DLL export name after applying the member's name type.
+    pub export: String,
     pub dll: String,
 }
 
@@ -14,9 +17,20 @@ const MEMBER_HEADER_LEN: usize = 60;
 /// `IMPORT_OBJECT_HEADER` short-import signature.
 const IMPORT_SIGNATURE: &[u8] = &[0x00, 0x00, 0xFF, 0xFF];
 const IMPORT_HEADER_LEN: usize = 20;
+const MACHINE_OFFSET: usize = 6;
 const SIZE_OF_DATA_OFFSET: usize = 12;
+const FLAGS_OFFSET: usize = 18;
 
-/// Parses every short-import member, preserving archive order and duplicates.
+/// `IMPORT_OBJECT_NAME_TYPE` values.
+const ORDINAL: u16 = 0;
+const NAME: u16 = 1;
+const NAME_NO_PREFIX: u16 = 2;
+const UNDECORATE: u16 = 3;
+const EXPORTAS: u16 = 4;
+
+/// Parses every named short-import member, preserving archive order and duplicates.
+///
+/// Ordinal-only members carry no export name and are skipped.
 pub fn read(bytes: &[u8]) -> Result<Vec<Import>, Error> {
     if bytes.len() < ARCHIVE_MAGIC.len() || &bytes[..ARCHIVE_MAGIC.len()] != ARCHIVE_MAGIC {
         return Err(err("not a COFF archive (missing `!<arch>` magic)"));
@@ -44,7 +58,9 @@ pub fn read(bytes: &[u8]) -> Result<Vec<Import>, Error> {
 
         // Skip archive bookkeeping members.
         if name != b"/" && name != b"//" && data.starts_with(IMPORT_SIGNATURE) {
-            imports.push(parse_short_import(data)?);
+            if let Some(import) = parse_short_import(data)? {
+                imports.push(import);
+            }
         }
 
         pos = data_end + (size & 1);
@@ -53,23 +69,68 @@ pub fn read(bytes: &[u8]) -> Result<Vec<Import>, Error> {
     Ok(imports)
 }
 
-fn parse_short_import(data: &[u8]) -> Result<Import, Error> {
+fn parse_short_import(data: &[u8]) -> Result<Option<Import>, Error> {
+    let machine = u16::from_le_bytes(
+        data.get(MACHINE_OFFSET..MACHINE_OFFSET + 2)
+            .ok_or_else(|| err("short import member is shorter than its header"))?
+            .try_into()
+            .unwrap(),
+    );
     let size_of_data = u32::from_le_bytes(
         data.get(SIZE_OF_DATA_OFFSET..SIZE_OF_DATA_OFFSET + 4)
             .ok_or_else(|| err("short import member is shorter than its header"))?
             .try_into()
             .unwrap(),
     ) as usize;
+    let flags = u16::from_le_bytes(
+        data.get(FLAGS_OFFSET..FLAGS_OFFSET + 2)
+            .ok_or_else(|| err("short import member is shorter than its header"))?
+            .try_into()
+            .unwrap(),
+    );
+    let name_type = (flags >> 2) & 0x7;
 
     let strings = data
         .get(IMPORT_HEADER_LEN..IMPORT_HEADER_LEN + size_of_data)
         .ok_or_else(|| err("short import names extend past member data"))?;
 
+    if name_type == ORDINAL {
+        return Ok(None);
+    }
+
     let mut parts = strings.split(|&b| b == 0);
     let symbol = next_string(&mut parts, "symbol")?;
     let dll = next_string(&mut parts, "DLL")?;
+    let export = match name_type {
+        NAME => symbol,
+        NAME_NO_PREFIX => strip_prefix(&symbol).to_string(),
+        UNDECORATE => strip_undecorate(&symbol),
+        EXPORTAS => next_string(&mut parts, "export")?,
+        other => {
+            return Err(err(&format!(
+                "short import has unsupported name type {other}"
+            )));
+        }
+    };
 
-    Ok(Import { symbol, dll })
+    Ok(Some(Import {
+        machine,
+        export,
+        dll,
+    }))
+}
+
+fn strip_prefix(symbol: &str) -> &str {
+    symbol.strip_prefix('_').unwrap_or(symbol)
+}
+
+/// MSVC name undecoration for `__cdecl`/`__stdcall` decorations: `_name@12` -> `name`.
+fn strip_undecorate(symbol: &str) -> String {
+    let name = strip_prefix(symbol);
+    match name.rfind('@') {
+        Some(at) if name[at + 1..].chars().all(|c| c.is_ascii_digit()) => name[..at].to_string(),
+        _ => name.to_string(),
+    }
 }
 
 fn next_string<'a>(

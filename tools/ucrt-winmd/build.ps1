@@ -3,6 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Win32MetadataPath,
     [string]$SdkIncludePath,
+    [string]$SdkLibPath,
     [string]$MsvcIncludePath,
     [string]$ClangPath = 'clang',
     [string]$LibClangPath,
@@ -22,7 +23,7 @@ foreach ($name in @('PATH', 'LIBCLANG_PATH', 'CARGO_TARGET_DIR')) {
 try {
     New-Item out -ItemType Directory -Force | Out-Null
     Remove-Item out/manifest.json -ErrorAction SilentlyContinue
-    $toolchain = Get-CrtToolchain -SdkIncludePath $SdkIncludePath -MsvcIncludePath $MsvcIncludePath -ClangPath $ClangPath -LibClangPath $LibClangPath
+    $toolchain = Get-CrtToolchain -SdkIncludePath $SdkIncludePath -SdkLibPath $SdkLibPath -MsvcIncludePath $MsvcIncludePath -ClangPath $ClangPath -LibClangPath $LibClangPath
     $toolchain['win32_metadata'] = $Win32MetadataPath
     $toolchain | ConvertTo-Json -Depth 8 | Set-Content out/toolchain.json -Encoding utf8NoBOM
     $env:LIBCLANG_PATH = $toolchain.libclang_path

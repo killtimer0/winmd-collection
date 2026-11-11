@@ -790,9 +790,15 @@ impl Clang {
         self.libraries.get(symbol).map(String::as_str)
     }
 
-    /// Reads a COFF import library and adds its symbol -> DLL mappings.
-    pub fn import_library(&mut self, path: impl AsRef<Path>) -> Result<&mut Self, Error> {
-        extend_libraries(&mut self.libraries, path.as_ref())?;
+    /// Reads a COFF import library and adds its symbol -> DLL mappings for `machine`.
+    ///
+    /// Keys are DLL export names, so decorated x86 symbols match their header names.
+    pub fn import_library(
+        &mut self,
+        path: impl AsRef<Path>,
+        machine: u16,
+    ) -> Result<&mut Self, Error> {
+        extend_libraries(&mut self.libraries, path.as_ref(), machine)?;
         Ok(self)
     }
 

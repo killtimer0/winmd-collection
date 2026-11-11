@@ -3,6 +3,10 @@
 Based on windows-rdl 0.100.0, with its upstream license retained.
 
 - `reader/item.rs`: recognize `#[declaration] extern ... fn` as a free function.
+- `implib.rs`: resolve each short import's DLL export name from its name type
+  (name, no-prefix, undecorate, export-as), retain the target machine and skip
+  ordinal-only members. ARM64 libraries also carry ARM64EC entries, which callers
+  filter by machine.
 - `reader/fn.rs`: reject simultaneous library/declaration markers; emit declarations
   without PInvokeImpl or ImplMap. Method implementation flags are ECMA-335
   Native (0x0001), Unmanaged (0x0004) and ForwardRef (0x0010), with no method body.

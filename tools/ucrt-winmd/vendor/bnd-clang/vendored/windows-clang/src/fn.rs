@@ -250,7 +250,9 @@ impl Fn {
             quote! {}
         };
 
-        let library_attr = if let Some(import) = &self.import_name {
+        let library_attr = if self.library.is_empty() {
+            quote! { #[declaration] }
+        } else if let Some(import) = &self.import_name {
             quote! { #[library(#library, import = #import)] }
         } else {
             quote! { #[library(#library)] }
