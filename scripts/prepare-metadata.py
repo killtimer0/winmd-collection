@@ -99,10 +99,10 @@ def import_ucrt(output):
     if any(manifest["checks"].get(name) != "passed" for name in ("contracts", "ast_audit_and_clippy")):
         raise ValueError("Run the UCRT generator with -Check before importing")
     toolchain = manifest["toolchain"]
+    source.pop("source_inputs", None)
+    source.pop("metadata_references", None)
     source.update(
         generator_revision=manifest["generator_revision"],
-        source_inputs=manifest["source_inputs"],
-        metadata_references=manifest["metadata_references"],
         sdk_version=Path(toolchain["sdk_include"]).name,
         msvc_version=Path(toolchain["msvc_include"]).parent.name,
         generation_manifest_sha256=digest(manifest_data),

@@ -75,7 +75,7 @@ class PreparationTests(unittest.TestCase):
             (root / "sources").mkdir()
             (root / "tools/ucrt-winmd").mkdir(parents=True)
             (root / "tools/ucrt-winmd/LICENSE").write_bytes(b"license")
-            (root / "sources/ucrt.json").write_text(json.dumps({"kind": "generated", "files": dict.fromkeys(("UCRT.winmd", "licenses/ucrt/generator-LICENSE"), "0" * 64)}))
+            (root / "sources/ucrt.json").write_text(json.dumps({"kind": "generated", "source_inputs": [{"path": "stale"}], "metadata_references": [{"path": "stale"}], "files": dict.fromkeys(("UCRT.winmd", "licenses/ucrt/generator-LICENSE"), "0" * 64)}))
             data = b"generated metadata"
             (output / "UCRT.winmd").write_bytes(data)
             manifest = {"artifacts": [{"path": "out/UCRT.winmd", "sha256": hashlib.sha256(data).hexdigest()}],
@@ -95,8 +95,8 @@ class PreparationTests(unittest.TestCase):
                 self.assertEqual(record["sdk_version"], "10.0.26100.0")
                 self.assertEqual(record["generation_manifest_sha256"], hashlib.sha256((output / "manifest.json").read_bytes()).hexdigest())
                 self.assertEqual((root / "artifacts/licenses/ucrt/generator-LICENSE").read_bytes(), b"license")
-                self.assertEqual(record["source_inputs"], manifest["source_inputs"])
-                self.assertEqual(record["metadata_references"], manifest["metadata_references"])
+                self.assertNotIn("source_inputs", record)
+                self.assertNotIn("metadata_references", record)
                 self.assertEqual(set(record["files"]), {"UCRT.winmd", "licenses/ucrt/generator-LICENSE"})
                 self.assertFalse((root / "artifacts/manifest.json").exists())
                 before = (root / "sources/ucrt.json").read_bytes()
